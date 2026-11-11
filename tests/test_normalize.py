@@ -63,6 +63,9 @@ def test_detect_employment_type():
     assert detect_employment_type("Contract") == "contract"
     assert detect_employment_type("Part Time") == "part_time"
     assert detect_employment_type("Internship") == "internship"
+    assert detect_employment_type("FULL_TIME") == "full_time"
+    assert detect_employment_type("PART_TIME") == "part_time"
+    assert detect_employment_type("CONTRACTOR") == "contract"
     assert detect_employment_type("") == "unknown"
 
 

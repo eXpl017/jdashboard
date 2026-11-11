@@ -192,7 +192,17 @@ def detect_employment_type(text: str | None) -> str:
     if not text:
         return "unknown"
     lowered = normalize_width(text).lower()
-    if any(token in lowered for token in ("part time", "part-time", "パート", "アルバイト")):
+    if any(
+        token in lowered
+        for token in (
+            "part time",
+            "part-time",
+            "part_time",
+            "parttime",
+            "パート",
+            "アルバイト",
+        )
+    ):
         return "part_time"
     if any(token in lowered for token in ("intern", "インターン")):
         return "internship"
@@ -214,6 +224,8 @@ def detect_employment_type(text: str | None) -> str:
         for token in (
             "full time",
             "full-time",
+            "full_time",
+            "fulltime",
             "permanent",
             "regular employee",
             "正社員",

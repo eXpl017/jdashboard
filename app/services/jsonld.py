@@ -1,9 +1,18 @@
 import html as html_module
 import json
+import re
 from collections.abc import Iterator
 from typing import Any
 
 from bs4 import BeautifulSoup
+
+# Literal control characters are invalid inside JSON strings; tab/newline/CR are
+# valid JSON whitespace and are preserved. Everything else is stripped.
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _clean_json_text(raw: str) -> str:
+    return _CONTROL_CHARS.sub("", raw)
 
 
 def _iter_objects(data: Any) -> Iterator[dict[str, Any]]:
@@ -39,10 +48,10 @@ def extract_job_posting_jsonld(html: str) -> dict[str, Any] | None:
             continue
 
         try:
-            data = json.loads(raw)
+            data = json.loads(_clean_json_text(raw), strict=False)
         except json.JSONDecodeError:
             try:
-                data = json.loads(html_module.unescape(raw))
+                data = json.loads(_clean_json_text(html_module.unescape(raw)), strict=False)
             except json.JSONDecodeError:
                 continue
 
