@@ -1,0 +1,1 @@
+"""Japan cybersecurity jobs dashboard."""
