@@ -17,7 +17,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         db_path = settings.database_url.removeprefix("sqlite:///")
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     models.Base.metadata.create_all(bind=engine)
-    yield
+    try:
+        yield
+    finally:
+        service = getattr(_app.state, "refresh_service", None)
+        if service is not None:
+            await service.aclose()
 
 
 app = FastAPI(

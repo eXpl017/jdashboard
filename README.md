@@ -3,7 +3,9 @@
 A small, single-user dashboard that collects cybersecurity job listings in Japan
 from public job boards and shows the newest ones in a simple web UI.
 
-**Status: planning only.** No application code has been written yet.
+**Status: in progress.** Phases 0–2 are implemented: the app scaffold, the
+database and query API, and the scraper framework plus manual refresh service.
+The five source scrapers are stubs until Phase 3; the web UI lands in Phase 4.
 Start with [PLAN.md](PLAN.md), then read the topic docs in [docs/](docs/).
 
 ## What it will do
@@ -30,9 +32,9 @@ Start with [PLAN.md](PLAN.md), then read the topic docs in [docs/](docs/).
 | HTML parsing | BeautifulSoup + lxml, plus JSON-LD parsing |
 | Tests / lint | pytest, respx, ruff |
 
-## Planned quick start
+## Quick start
 
-These commands are the target after implementation, not runnable yet.
+The API is runnable now; the dashboard UI lands in Phase 4.
 
 ```bash
 # 1. Install
@@ -44,7 +46,7 @@ cp .env.example .env
 # 3. Run
 uv run uvicorn app.main:app --reload
 
-# 4. Open http://127.0.0.1:8000 and click Refresh
+# 4. Open http://127.0.0.1:8000/docs to inspect the API
 ```
 
 ## Launch sources

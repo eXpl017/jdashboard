@@ -88,3 +88,33 @@ class StatsResponse(BaseModel):
     by_role_category: dict[str, int]
     relocation_friendly: int
     last_run: ScrapeRunRead | None = None
+
+
+class RefreshRequest(BaseModel):
+    window_days: int = Field(default=3, ge=1, le=30)
+
+
+class RefreshStartResponse(BaseModel):
+    run_id: int
+    status: str = "running"
+
+
+class SourceProgressRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    status: str = "pending"
+    found: int = 0
+    new: int = 0
+    updated: int = 0
+    skipped: int = 0
+    errors: int = 0
+    error_message: str | None = None
+
+
+class RefreshStatusResponse(BaseModel):
+    run_id: int | None = None
+    status: str = "idle"
+    started_at: UtcDateTime | None = None
+    finished_at: UtcDateTime | None = None
+    current_source: str | None = None
+    sources: dict[str, SourceProgressRead] = Field(default_factory=dict)

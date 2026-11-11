@@ -31,6 +31,12 @@ def session() -> Iterator[Session]:
 
 
 @pytest.fixture()
+def session_factory(session: Session) -> Callable[[], Session]:
+    """Session factory sharing the fixture's in-memory database and schema."""
+    return TestingSessionLocal
+
+
+@pytest.fixture()
 def client(session: Session) -> Iterator[TestClient]:
     def override_get_session() -> Iterator[Session]:
         yield session
