@@ -157,10 +157,34 @@ See [docs/sources.md](docs/sources.md) for the evidence and caveats.
 | [docs/questions.md](docs/questions.md) | Decisions needed from you |
 | [docs/tasks/](docs/tasks/) | Task briefs for AI-assisted implementation |
 
-## OpenCode helpers planned
+## OpenCode helpers
 
-- Skills: `.opencode/skills/scraper-authoring/`, `.opencode/skills/dashboard-qa/`
-- Subagents: `.opencode/agents/scraper-builder.md`, `.opencode/agents/qa-reviewer.md`,
-  `.opencode/agents/source-researcher.md`
+The repository ships the workflow used to build it, so a new source can be
+added with one instruction.
 
-These encode the repeatable workflow so each new source is added consistently.
+**Commands** (`.opencode/commands/`)
+
+- `/add-source <source>` — add a source end to end: research, brief, scraper,
+  fixtures, tests, registration, live smoke, review.
+- `/research-source <source>` — evaluate a candidate source and write a brief
+  without writing code.
+
+**Skills** (`.opencode/skills/`)
+
+- `source-onboarding` — the full onboarding workflow, phases, gates, and
+  handoffs.
+- `scraper-authoring` — the parser-level checklist and per-field mapping.
+- `dashboard-qa` — the review checklist for any change.
+
+**Subagents** (`.opencode/agents/`)
+
+- `source-researcher` — robots/terms research and the source brief.
+- `scraper-builder` — scraper module, fixtures, parser tests.
+- `source-integrator` — enable flag, registry, docs, full suite, live smoke.
+- `qa-reviewer` — read-only review of the finished diff.
+
+Example:
+
+```text
+/add-source wantedly
+```

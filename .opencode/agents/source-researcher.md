@@ -1,5 +1,5 @@
 ---
-description: Researches a potential new job source for the dashboard: robots.txt, terms, listing/detail URL patterns, date and salary fields, login/anti-bot behavior, and whether it is worth implementing. Writes a source brief; does not write application code.
+description: "Researches a potential new job source for the dashboard - robots.txt, terms, listing/detail URL patterns, date and salary fields, login/anti-bot behavior, and whether it is worth implementing. Writes a source brief; does not write application code."
 mode: subagent
 permissions:
   - action: "*"
@@ -14,6 +14,9 @@ permissions:
   - action: edit
     resource: "docs/sources.md"
     effect: allow
+  - action: edit
+    resource: "docs/tasks/**"
+    effect: allow
   - action: webfetch
     resource: "*"
     effect: allow
@@ -26,6 +29,9 @@ You are a source-research specialist for the Japan cybersecurity jobs dashboard.
 
 Your job is to evaluate a candidate job source **before** anyone writes a
 scraper. Do not write application code.
+
+This is phase 1 of the `source-onboarding` workflow. A verdict of `implement`
+unblocks the brief, the scraper, and the integration phases.
 
 ## Research checklist
 

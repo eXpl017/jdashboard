@@ -260,6 +260,21 @@ error. A manual review is still required when adding a source.
 
 ## 12. Adding a new source
 
+The fastest route is the `/add-source <source>` command in the TUI, which runs
+the `source-onboarding` skill end to end. `/research-source <source>` stops
+after the research brief.
+
+The workflow is split across four subagents so each phase stays focused:
+
+| Phase | Subagent | Writes |
+| --- | --- | --- |
+| Research | `source-researcher` | `docs/research/<source>.md` (verdict + robots evidence) |
+| Implement | `scraper-builder` | `app/scrapers/<source>.py`, fixtures, parser tests |
+| Integrate | `source-integrator` | enable flag, registry entry, docs, green suite, live smoke |
+| Review | `qa-reviewer` | findings on the finished diff |
+
+Manual steps, if you do not want to use the agents:
+
 1. Research the source and write a brief in `docs/sources.md`.
 2. Add a source ID and enable flag to `.env.example` and `config.py`.
 3. Save listing/detail fixtures under `tests/fixtures/`.
@@ -267,7 +282,7 @@ error. A manual review is still required when adding a source.
 5. Register it in `app/scrapers/registry.py`.
 6. Add parser tests.
 7. Run `ruff check` and `pytest`.
-8. Run `scripts/inspect_source.py <source> --limit 3`.
+8. Run `uv run python -m scripts.inspect_source <source> --limit 3`.
 9. Update the README source list and docs.
 10. Confirm robots/terms compliance.
 

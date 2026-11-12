@@ -8,6 +8,11 @@ description: Add or repair a job-source scraper for the Japan cybersecurity dash
 Use this skill when adding a new job source or repairing an existing scraper in
 this project.
 
+For a brand-new source, the `source-onboarding` skill covers the whole flow
+(research → brief → implement → integrate → review) and the `/add-source`
+command runs it. Use this skill for the parser-level checklist and for repairs
+to an existing scraper.
+
 ## Read before editing
 
 1. `PLAN.md` — scope and acceptance criteria.
@@ -65,11 +70,11 @@ this project.
    - A mocked end-to-end test with `respx` if useful.
    - Run `ruff check .` and `pytest`.
 6. **Smoke test**
-   - Run `python scripts/inspect_source.py <source> --limit 3`.
+   - Run `uv run python -m scripts.inspect_source <source> --limit 3`.
    - Confirm title, company, posted date, and URL look correct.
    - Do not write to the database during inspection.
 7. **Document**
-   - Update `docs/sources.md` and `README.md`.
+   - Update `docs/sources.md`, `docs/scrapers.md`, and `README.md`.
    - Note any source-specific quirk.
 
 ## Field mapping checklist

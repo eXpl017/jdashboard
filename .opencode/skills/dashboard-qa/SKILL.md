@@ -95,7 +95,7 @@ before committing or handing work back.
 uv run ruff check .
 uv run pytest
 uv run pytest tests/test_scrapers.py -q
-uv run python scripts/inspect_source.py <source> --limit 3
+uv run python -m scripts.inspect_source <source> --limit 3
 ```
 
 ## Report format

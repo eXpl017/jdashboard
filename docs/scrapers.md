@@ -406,7 +406,7 @@ speed and clarity.
 A manual developer command, not part of CI:
 
 ```bash
-python scripts/inspect_source.py michael_page --limit 3
+uv run python -m scripts.inspect_source michael_page --limit 3
 ```
 
 It should:
@@ -417,6 +417,10 @@ It should:
 - Respect the same rate limits and robots rules.
 
 ## 8. Adding a new source — checklist
+
+The fastest path is the `/add-source <source>` command, which runs the
+`source-onboarding` skill: research → brief → scraper → integration → review.
+The manual checklist below is what that workflow enforces.
 
 1. Research the source: robots.txt, terms, listing URL, detail URL, date field,
    login/anti-bot behavior.
@@ -429,7 +433,7 @@ It should:
 8. Add normalization/classification cases if the source has unique fields.
 9. Run `ruff check` and `pytest`.
 10. Run a live smoke test with `--limit 3`.
-11. Update `docs/sources.md` and `README.md`.
+11. Update `docs/sources.md`, `docs/scrapers.md`, and `README.md`.
 12. Confirm no login, no CAPTCHA bypass, and robots compliance.
 
 ## 9. Common failure modes

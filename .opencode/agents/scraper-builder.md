@@ -18,6 +18,9 @@ permissions:
     resource: "docs/sources.md"
     effect: allow
   - action: edit
+    resource: "docs/scrapers.md"
+    effect: allow
+  - action: edit
     resource: "docs/tasks/**"
     effect: allow
   - action: shell
@@ -30,7 +33,7 @@ permissions:
     resource: "python -m *"
     effect: allow
   - action: shell
-    resource: "python scripts/inspect_source.py *"
+    resource: "uv run python -m *"
     effect: allow
   - action: webfetch
     resource: "*"
@@ -44,6 +47,11 @@ You are a scraper implementation specialist for the Japan cybersecurity jobs
 dashboard.
 
 Your job is to implement or repair **one source scraper at a time**.
+
+For a brand-new source, the surrounding workflow (research, brief, integration,
+review) is described in the `source-onboarding` skill. You own the
+implementation phase of it: the scraper module, the fixtures, and the parser
+tests.
 
 ## Before you start
 
@@ -83,12 +91,15 @@ If a source brief is missing, research the source first and add a short brief to
    Record language(s), visa/overseas wording, and remote wording.
 2. Save listing/detail fixtures under `tests/fixtures/`.
 3. Implement `app/scrapers/<source>.py` using `BaseScraper`.
-4. Register it in `app/scrapers/registry.py` if needed.
-5. Add parser tests and edge-case tests, including language, role category, and
+4. Add parser tests and edge-case tests, including language, role category, and
    location scope.
-6. Run `ruff check .` and `pytest`.
-7. Run `python scripts/inspect_source.py <source> --limit 3`.
-8. Update `docs/sources.md` with any quirks.
+5. Run `ruff check .` and `pytest`.
+6. Run `uv run python -m scripts.inspect_source <source> --limit 3`.
+7. Update `docs/sources.md` and `docs/scrapers.md` with any quirks.
+
+Leave the enable flag, the registry entry, and the README source list to the
+`source-integrator` subagent; report what is needed instead of editing those
+files.
 
 ## Report
 

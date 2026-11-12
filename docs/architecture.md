@@ -286,7 +286,7 @@ Do not commit `.env`. Commit `.env.example` only.
 - **API tests** with FastAPI `TestClient` and a temporary database.
 - **Refresh tests** with a fake scraper injected into the registry.
 - **Live smoke tests** are a manual developer command, not part of CI:
-  `python scripts/refresh.py --source michael_page --dry-run`.
+  `python -m scripts.refresh --source michael_page --window-days 3`.
 
 ## 10. Observability
 
