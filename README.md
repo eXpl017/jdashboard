@@ -68,6 +68,59 @@ uv run python -m scripts.inspect_source michael_page --limit 3
 Both scripts use the same rate limits, robots checks, and normalization as the
 dashboard.
 
+## Run with Docker
+
+The image is built from [`Dockerfile`](Dockerfile) and run with
+[`docker-compose.yml`](docker-compose.yml).
+
+```bash
+# 1. Build the image
+docker compose build
+
+# 2. Start the dashboard (published on http://127.0.0.1:8000)
+docker compose up -d
+
+# 3. Follow the logs
+docker compose logs -f
+
+# 4. Stop it (the database volume is kept)
+docker compose down
+```
+
+The image installs only runtime dependencies from `uv.lock`, runs as a non-root
+user, and keeps the SQLite database in the `dashboard-data` volume mounted at
+`/data`.
+
+```bash
+# Run a refresh inside the container
+docker compose exec dashboard python -m scripts.refresh --window-days 3
+
+# Inspect a single source inside the container
+docker compose exec dashboard python -m scripts.inspect_source michael_page --limit 3
+
+# Rebuild after code changes
+docker compose build && docker compose up -d
+
+# Check the container health
+docker compose ps
+
+# Back up the database
+docker compose exec dashboard python -c \
+  "import sqlite3; sqlite3.connect('/data/jobs.db').execute(\"VACUUM INTO '/data/jobs.backup.db'\")"
+docker compose cp dashboard:/data/jobs.backup.db ./jobs.backup.db
+
+# Delete the container and the database volume
+docker compose down -v
+```
+
+Notes:
+
+- The dashboard is published on `127.0.0.1` only and has no authentication.
+  Set `DASHBOARD_BIND=0.0.0.0` in `.env` to expose it on your network — not
+  recommended unless you put your own authentication in front of it.
+- `DASHBOARD_PORT` changes the host port (default `8000`).
+- The image has no dev dependencies; run `uv run pytest` on the host.
+
 ## Launch sources
 
 1. **Michael Page Japan** — IT Security category

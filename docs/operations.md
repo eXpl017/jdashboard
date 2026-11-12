@@ -70,7 +70,76 @@ uv run python -m scripts.refresh --source japan_dev --window-days 3
 
 The CLI uses the same rate limits, robots checks, and normalization as the UI.
 
-## 6. Tests and lint
+## 6. Docker
+
+The image is defined in `Dockerfile`; `docker-compose.yml` builds and runs it.
+
+```bash
+# Build the image
+docker compose build
+
+# Start in the background
+docker compose up -d
+
+# Status and logs
+docker compose ps
+docker compose logs -f dashboard
+
+# Stop, keep the database volume
+docker compose down
+
+# Stop and delete the database volume too
+docker compose down -v
+```
+
+Image details:
+
+- Base: `python:3.13-slim` with `uv` used only to install locked runtime
+  dependencies (`uv sync --frozen --no-dev --no-install-project`).
+- Runs as the unprivileged user `appuser` (uid 10001).
+- Listens on `0.0.0.0:8000` inside the container; Compose publishes it on
+  `127.0.0.1:8000` by default.
+- Health check hits `GET /health` every 30 s.
+- The SQLite database lives in the `dashboard-data` volume at `/data`.
+
+Useful in-container commands:
+
+```bash
+# Refresh from the CLI
+docker compose exec dashboard python -m scripts.refresh --window-days 3
+
+# Inspect one source
+docker compose exec dashboard python -m scripts.inspect_source michael_page --limit 3
+
+# Read the database
+docker compose exec dashboard python -c \
+  "import sqlite3; print(sqlite3.connect('/data/jobs.db').execute('select count(*) from jobs').fetchone())"
+
+# Copy the database out
+docker compose cp dashboard:/data/jobs.db ./jobs.db
+```
+
+Configuration comes from the environment; Compose reads the project `.env` file
+for `${VAR:-default}` substitution. Useful keys:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DASHBOARD_BIND` | `127.0.0.1` | Host interface to publish on |
+| `DASHBOARD_PORT` | `8000` | Host port |
+| `LOG_LEVEL` | `INFO` | Log level inside the container |
+| `DATABASE_URL` | `sqlite:////data/jobs.db` | Keep the `/data` path in sync with the volume |
+| `ENABLE_*` | `true` | Per-source switches |
+
+Troubleshooting:
+
+- `docker compose up` fails with a port conflict: change `DASHBOARD_PORT`.
+- The container is unhealthy: `docker compose logs dashboard` and check
+  `GET /health`; the app never scrapes on startup, so a failure here is a
+  config or database problem, not a network one.
+- After changing `pyproject.toml` or `uv.lock`, rebuild:
+  `docker compose build --no-cache && docker compose up -d`.
+
+## 7. Tests and lint
 
 ```bash
 uv run pytest
@@ -80,7 +149,7 @@ uv run ruff format --check .
 
 Tests must not hit the live network. Use fixtures and `respx`.
 
-## 7. Database
+## 8. Database
 
 Default path: `data/jobs.db`.
 
@@ -111,7 +180,7 @@ rm data/jobs.db
 # restart the app; the schema is recreated
 ```
 
-## 8. Logs
+## 9. Logs
 
 - Console output from Uvicorn and the app, emitted as single-line JSON objects
   (`ts`, `level`, `logger`, `message`, plus `exc` when a traceback is attached).
@@ -131,7 +200,7 @@ What is not logged:
 - Full HTML pages.
 - Personal data from listings beyond what is needed for debugging.
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### The dashboard shows no jobs
 
@@ -174,7 +243,7 @@ What is not logged:
 - Ensure the database and terminal use UTF-8.
 - Check `normalize_width` does not strip meaningful characters.
 
-## 10. robots.txt and terms policy
+## 11. robots.txt and terms policy
 
 Before enabling a source:
 
@@ -189,7 +258,7 @@ Before enabling a source:
 The app should check robots at runtime and skip a disallowed path with a clear
 error. A manual review is still required when adding a source.
 
-## 11. Adding a new source
+## 12. Adding a new source
 
 1. Research the source and write a brief in `docs/sources.md`.
 2. Add a source ID and enable flag to `.env.example` and `config.py`.
@@ -205,17 +274,19 @@ error. A manual review is still required when adding a source.
 Use the `scraper-authoring` skill and the `scraper-builder` subagent for this
 workflow.
 
-## 12. Security notes
+## 13. Security notes
 
 - The dashboard has no login. Keep it on `127.0.0.1`.
 - If you expose it to a LAN, use a reverse proxy with authentication and TLS.
+- The container image runs as an unprivileged user (`appuser`) and only writes
+  to the `/data` volume.
 - Do not commit `.env` or `data/`.
 - Do not add job-site credentials or cookies unless you explicitly decide to
   support an authenticated source. If you do, store them in `.env` and never in
   the database or logs.
 - Keep dependencies updated and run `ruff`/`pytest` before committing.
 
-## 13. Deployment options
+## 14. Deployment options
 
 ### Local (v1)
 
@@ -231,9 +302,13 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Add a reverse proxy (Caddy/Nginx) with basic auth or an SSO layer first.
 
-### Docker (optional, phase 6)
+### Docker (recommended for a long-running instance)
 
-- Multi-stage build with `uv`.
-- Mount `data/` as a volume.
-- Bind to `127.0.0.1` on the host.
-- No scheduler; the container only serves the app.
+```bash
+docker compose build
+docker compose up -d
+```
+
+See [section 6](#6-docker) for the full runbook, backups, and configuration
+keys. The container serves the app only; there is no scheduler and no startup
+scrape.

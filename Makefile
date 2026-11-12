@@ -12,3 +12,15 @@ lint:
 
 format:
 	uv run ruff format .
+
+docker-build:
+	docker compose build
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
+
+docker-logs:
+	docker compose logs -f dashboard

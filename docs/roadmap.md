@@ -209,7 +209,7 @@ Prioritize only after v1 is stable.
 - Saved filter presets.
 - Daily digest (would require a scheduler; out of scope for v1).
 - Japanese translation/summarization (optional LLM).
-- Dockerfile and a local compose setup.
+- [x] Dockerfile and a local compose setup (`Dockerfile`, `docker-compose.yml`).
 - Alembic migrations.
 
 ## Suggested commit sequence
