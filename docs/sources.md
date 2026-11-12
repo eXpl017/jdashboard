@@ -211,6 +211,11 @@ https://www.daijob.com/en/jobs/detail/<id>
 - Contains `Updated YYYY-MM-DD` and `Activated YYYY-MM-DD`.
   - `Activated` = first published date → `posted_at`.
   - `Updated` = last edited date → `source_updated_at`.
+- Also embeds a schema.org `JobPosting` JSON-LD block with `identifier`,
+  `datePosted`, `validThrough`, `hiringOrganization`, `baseSalary` (when the
+  source publishes one), and `jobLocationType` for fully remote roles. Treat
+  the HTML `Activated`/`Updated` labels as authoritative and use the JSON-LD
+  for enrichment.
 - Also contains company name, job type, industry, location, salary, Japanese
   level, and the full description.
 

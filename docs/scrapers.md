@@ -244,8 +244,9 @@ Handle:
 1. `GET https://www.daijob.com/en/jobs/search?js_jt%5B%5D=503&fl=1&pg=0`
 2. Follow the redirect to the `search_result` URL.
 3. Extract unique `/en/jobs/detail/<id>` links.
-4. Optionally fetch page 2 (`pg=1`) and/or curated keyword searches.
-5. Fetch detail pages (max ~40).
+4. Fetch page 2 of the category and the first page of two curated keyword
+   searches (`サイバーセキュリティ`, `情報セキュリティ`).
+5. Deduplicate detail IDs and fetch detail pages (max 40).
 6. Parse:
    - `Updated YYYY-MM-DD` → `source_updated_at`
    - `Activated YYYY-MM-DD` → `posted_at`
@@ -278,9 +279,15 @@ IAM
 **Gotchas**
 
 - The `kw=security` search is broad (242 results); do not fetch all details.
+  A live `サイバーセキュリティ` search returned 76 results. The category plus
+  two keyword searches produced 60 unique detail links, so the 40-detail cap
+  matters: fetch the category first, then keyword candidates.
 - Prefer the Security System SE category.
 - Do not scrape `/company/`, `/members/`, or apply pages.
-- Detail pages are HTML, not JSON-LD; use stable labels/selectors and fixtures.
+- Detail pages expose a schema.org `JobPosting` JSON-LD block **and** stable
+  HTML labels. Use the `Activated`/`Updated` labels as the authoritative dates
+  and use the JSON-LD only for enrichment (identifier, salary, location). Keep
+  the HTML selectors as the primary contract and cover both paths in fixtures.
 
 ### 4.5 Robert Half Japan (`robert_half.py`)
 
