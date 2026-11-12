@@ -164,7 +164,14 @@ def detect_remote(text: str | None) -> str:
         return "onsite"
     if any(
         token in lowered
-        for token in ("hybrid", "partially remote", "part remote", "一部在宅", "ハイブリッド")
+        for token in (
+            "hybrid",
+            "partially remote",
+            "part remote",
+            "partial remote",
+            "一部在宅",
+            "ハイブリッド",
+        )
     ):
         return "hybrid"
     if any(
