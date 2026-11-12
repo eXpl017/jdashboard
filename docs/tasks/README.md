@@ -15,17 +15,21 @@ topic docs have been read.
 
 ## Task order
 
-| # | Task | Depends on |
-| --- | --- | --- |
-| 01 | [Foundation](01-foundation.md) | — |
-| 02 | [Scraper framework](02-scraper-framework.md) | 01 |
-| 03 | [Michael Page scraper](03-source-michael-page.md) | 02 |
-| 04 | [JapanDev scraper](04-source-japan-dev.md) | 02 |
-| 05 | [TokyoDev scraper](05-source-tokyo-dev.md) | 02 |
-| 06 | [Daijob scraper](06-source-daijob.md) | 02 |
-| 07 | [Robert Half scraper](07-source-robert-half.md) | 02 |
-| 08 | [Refresh service + UI](08-refresh-and-ui.md) | 02 |
-| 09 | [Hardening and docs](09-hardening.md) | 03–08 |
+| # | Task | Depends on | Status |
+| --- | --- | --- | --- |
+| 01 | [Foundation](01-foundation.md) | — | done |
+| 02 | [Scraper framework](02-scraper-framework.md) | 01 | done |
+| 03 | [Michael Page scraper](03-source-michael-page.md) | 02 | done |
+| 04 | [JapanDev scraper](04-source-japan-dev.md) | 02 | done |
+| 05 | [TokyoDev scraper](05-source-tokyo-dev.md) | 02 | done |
+| 06 | [Daijob scraper](06-source-daijob.md) | 02 | done |
+| 07 | [Robert Half scraper](07-source-robert-half.md) | 02 | done |
+| 08 | [Refresh service + UI](08-refresh-and-ui.md) | 02 | done |
+| 09 | [Hardening and docs](09-hardening.md) | 03–08 | done |
+
+Later work (UI polish, Docker packaging, the source-onboarding workflow) was
+tracked in [`../roadmap.md`](../roadmap.md); those items are also complete.
+The open, optional items are the Phase 6 entries in the roadmap.
 
 ## Definition of done for every task
 

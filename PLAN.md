@@ -243,10 +243,26 @@ Relocation handling is resolved: the default sort stays **newest first**, and
 visa/overseas information appears as badges (`Visa support`, `Overseas OK`,
 `Japan residents only`). Jobs are not reordered by relocation eligibility.
 
-## 14. Next actions
+## 14. Status and next actions
 
-Planning is complete and no application code has been written. When you are
-ready:
+**This plan has been executed.** Phases 0–5 are complete: the application,
+the database and query API, the scraper framework and refresh service, all
+five launch-source scrapers, the web UI, and the hardening/documentation work.
+
+Current state:
+
+- 128 tests pass; `ruff check .` is clean.
+- The dashboard runs locally (`make run`, port 8001) or in Docker
+  (`docker compose up -d`, port 8000).
+- `AGENTS.md` is the entry point for agents; `docs/README.md` indexes the
+  documentation.
+
+Remaining optional work is Phase 6 in [`docs/roadmap.md`](docs/roadmap.md):
+cross-source deduplication, CSV/JSON export, saved filter presets, additional
+sources, and Alembic migrations.
+
+To pick the project up again:
 
 1. Install Python 3.11+ and `uv` (or use `pip` + `venv`).
-2. Say **go** for Phase 0 (scaffolding) and Phase 1 (database + query API).
+2. `uv sync --extra dev` and `cp .env.example .env`.
+3. Read [`AGENTS.md`](AGENTS.md) and [`docs/README.md`](docs/README.md).

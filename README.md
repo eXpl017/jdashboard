@@ -146,17 +146,19 @@ See [docs/sources.md](docs/sources.md) for the evidence and caveats.
 
 | File | Purpose |
 | --- | --- |
-| [PLAN.md](PLAN.md) | Master plan, scope, phases, acceptance criteria |
+| [AGENTS.md](AGENTS.md) | Entry point for AI agents: layout, commands, conventions, rules |
+| [PLAN.md](PLAN.md) | Master plan, scope, phases (executed) |
+| [docs/README.md](docs/README.md) | Index of all documentation |
 | [docs/sources.md](docs/sources.md) | Source research, URLs, fields, robots, login notes |
 | [docs/architecture.md](docs/architecture.md) | Components, refresh flow, concurrency, errors |
 | [docs/data-model.md](docs/data-model.md) | SQLite schema, normalization, dedup, retention |
 | [docs/scrapers.md](docs/scrapers.md) | Scraper contract, per-source strategy, testing |
 | [docs/ui.md](docs/ui.md) | Minimal UI and HTTP API specification |
-| [docs/roadmap.md](docs/roadmap.md) | Ordered implementation phases |
+| [docs/roadmap.md](docs/roadmap.md) | Ordered implementation phases and status |
 | [docs/operations.md](docs/operations.md) | Setup, run, troubleshoot, add a source |
 | [docs/verification.md](docs/verification.md) | Verification playbook: run the app and check it |
 | [docs/decisions.md](docs/decisions.md) | Architecture decision records |
-| [docs/questions.md](docs/questions.md) | Decisions needed from you |
+| [docs/questions.md](docs/questions.md) | Planning questions and their resolutions (historical) |
 | [docs/tasks/](docs/tasks/) | Task briefs for AI-assisted implementation |
 
 ## OpenCode helpers

@@ -1,5 +1,10 @@
 # Open Questions
 
+> **Historical.** These were the decisions that shaped the build. All of them
+> were resolved during Phases 0–5; the answers live in
+> [`decisions.md`](decisions.md) (ADRs) and in the code. Keep this file for the
+> original context and options, not as a to-do list.
+
 These are the decisions that affect the build. Each has a recommended default so
 work can start without blocking.
 
