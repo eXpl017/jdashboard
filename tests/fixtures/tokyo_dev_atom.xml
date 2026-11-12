@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
+  <id>tag:www.tokyodev.com,2005:/jobs/atom</id>
+  <link rel="alternate" type="text/html" href="https://www.tokyodev.com/jobs"/>
+  <link rel="self" type="application/atom+xml" href="https://www.tokyodev.com/jobs/atom.xml"/>
+  <title>TokyoDev Jobs</title>
+  <updated>2026-11-10T18:21:35+09:00</updated>
+  <entry>
+    <id>tag:www.tokyodev.com,2005:Job/2363</id>
+    <published>2026-11-10T18:21:35+09:00</published>
+    <updated>2026-11-10T18:21:35+09:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.tokyodev.com/companies/lunaris/jobs/senior-full-stack-software-engineer"/>
+    <title>Senior Full-stack Software Engineer at Lunaris</title>
+    <summary>Lunaris is hiring a Senior Full-stack Software Engineer. Residency in Japan required. No Japanese required. No remote ¥6M ~ ¥8M</summary>
+    <author><name>Lunaris</name></author>
+  </entry>
+  <entry>
+    <id>tag:www.tokyodev.com,2005:Job/2359</id>
+    <published>2026-11-02T17:26:25+09:00</published>
+    <updated>2026-11-02T17:26:25+09:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.tokyodev.com/companies/moneyforward/jobs/ai-security-engineer-ciso-office-tokyo"/>
+    <title>AI Security Engineer, CISO Office, Tokyo at Money Forward</title>
+    <summary>Money Forward is hiring a AI Security Engineer. Apply from abroad. Conversational required. Partially remote ¥6.9M ~ ¥17.0M</summary>
+    <author><name>Money Forward</name></author>
+  </entry>
+  <entry>
+    <id>tag:www.tokyodev.com,2005:Job/1000</id>
+    <published>2025-01-01T10:00:00+09:00</published>
+    <updated>2025-01-01T10:00:00+09:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.tokyodev.com/companies/oldco/jobs/stale-job"/>
+    <title>Stale Job at OldCo</title>
+    <summary>OldCo is hiring a Stale Job. Apply from abroad. No Japanese required. No remote</summary>
+    <author><name>OldCo</name></author>
+  </entry>
+</feed>
