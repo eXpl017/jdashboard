@@ -158,18 +158,20 @@ run a live smoke test, update docs.
 
 **Acceptance**
 
-- [ ] Dashboard loads with no jobs and a clear empty state.
-- [ ] Refresh shows per-source progress.
-- [ ] New jobs appear after refresh without a full page reload.
-- [ ] Filters update the list, including Role type, Language, Location scope,
+- [x] Dashboard loads with no jobs and a clear empty state.
+- [x] Refresh shows per-source progress.
+- [ ] New jobs appear after refresh without a full page reload (implemented;
+      verify live during Phase 5).
+- [x] Filters update the list, including Role type, Language, Location scope,
       and Visa/overseas.
-- [ ] Default view hides GRC/audit/consulting/sales/management and
+- [x] Default view hides GRC/audit/consulting/sales/management and
       `international_remote` roles.
-- [ ] Language, visa, and overseas badges render when known and are omitted when
+- [x] Language, visa, and overseas badges render when known and are omitted when
       unknown.
-- [ ] A source error is visible and does not hide other jobs.
-- [ ] Keyboard navigation works.
-- [ ] No external JS/CSS dependencies.
+- [x] A source error is visible and does not hide other jobs.
+- [ ] Keyboard navigation works (native controls implemented; manual check
+      pending).
+- [x] No external JS/CSS dependencies.
 
 ## Phase 5 — Hardening and documentation
 

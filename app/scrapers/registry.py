@@ -19,6 +19,10 @@ SCRAPER_CLASSES: dict[str, type[BaseScraper]] = {
     "robert_half": RobertHalfScraper,
 }
 
+SOURCE_NAMES: dict[str, str] = {
+    source_id: scraper_cls.source_name for source_id, scraper_cls in SCRAPER_CLASSES.items()
+}
+
 
 def _is_enabled(source_id: str, config: Settings) -> bool:
     return bool(getattr(config, f"enable_{source_id}", True))

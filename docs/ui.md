@@ -309,7 +309,7 @@ behind a debug flag).
 - On page load: `GET /api/jobs` with default filters (`role=technical`,
   `location_scope=japan`, `days=3`), `GET /api/stats`, `GET /api/sources`,
   `GET /api/refresh/status`.
-- On filter change: debounce 300 ms, then `GET /api/jobs`.
+- On filter change: debounce 250 ms, then `GET /api/jobs` and `GET /api/stats`.
 - On Refresh click:
   1. `POST /api/refresh`.
   2. If `202`, disable the button and poll `GET /api/refresh/status` every 1 s.

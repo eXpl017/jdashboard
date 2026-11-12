@@ -152,11 +152,79 @@ def test_stats_counts(session, make_job) -> None:
 
     stats = repository.get_stats(session)
 
-    assert stats["total_jobs"] == 2
+    # The filtered total honours the default technical/Japan filters, while the
+    # breakdowns stay global so filter controls never collapse to one value.
+    assert stats["total_jobs"] == 1
     assert stats["by_source"] == {"daijob": 1, "michael_page": 1}
     assert stats["by_role_category"] == {"engineering": 1, "grc": 1}
     assert stats["relocation_friendly"] == 1
     assert stats["last_run"] is None
+
+
+def test_stats_by_tag_and_filtered_totals(session, make_job) -> None:
+    repository.upsert_job(
+        session,
+        make_job(fingerprint="fp-1", security_tags=["security-engineering"]),
+    )
+    repository.upsert_job(
+        session,
+        make_job(fingerprint="fp-2", security_tags=["cloud-security"]),
+    )
+
+    stats = repository.get_stats(session)
+
+    assert stats["by_tag"] == {"cloud-security": 1, "security-engineering": 1}
+    assert stats["total_jobs"] == 2  # both fixtures are technical, Japan, within window
+    assert stats["new_in_window"] == 2
+
+    filtered = repository.get_stats(
+        session, role="all", location_scope="all", window_days=0, include_active=True
+    )
+    assert filtered["total_jobs"] == 2
+
+
+def test_get_source_health_latest_and_last_success(session) -> None:
+    assert repository.get_source_health(session) == {}
+
+    run = repository.create_run(session, trigger="manual", window_days=3)
+    result = repository.create_source_result(session, run_id=run.id, source="michael_page")
+    repository.finish_source_result(session, result.id, status="success", found=4)
+    repository.finish_run(session, run.id, status="success", total_found=4)
+
+    run2 = repository.create_run(session, trigger="manual", window_days=3)
+    result2 = repository.create_source_result(session, run_id=run2.id, source="michael_page")
+    repository.finish_source_result(
+        session, result2.id, status="error", found=0, errors=1, error_message="boom"
+    )
+    repository.finish_run(
+        session, run2.id, status="partial", total_found=0, total_errors=1, error_summary="boom"
+    )
+
+    health = repository.get_source_health(session)
+
+    assert set(health) == {"michael_page"}
+    assert health["michael_page"]["last_status"] == "error"
+    assert health["michael_page"]["last_success_at"] is not None
+
+
+def test_get_source_health_last_success_skips_failures(session) -> None:
+    run = repository.create_run(session, trigger="manual", window_days=3)
+    result = repository.create_source_result(session, run_id=run.id, source="daijob")
+    repository.finish_source_result(session, result.id, status="success", found=2)
+    repository.finish_run(session, run.id, status="success", total_found=2)
+
+    run2 = repository.create_run(session, trigger="manual", window_days=3)
+    result2 = repository.create_source_result(session, run_id=run2.id, source="daijob")
+    repository.finish_source_result(
+        session, result2.id, status="error", found=0, errors=1, error_message="blocked"
+    )
+    repository.finish_run(
+        session, run2.id, status="failed", total_found=0, total_errors=1, error_summary="blocked"
+    )
+
+    health = repository.get_source_health(session)
+    assert health["daijob"]["last_status"] == "error"
+    assert health["daijob"]["last_success_at"] is not None
 
 
 def test_run_and_source_result_records(session) -> None:

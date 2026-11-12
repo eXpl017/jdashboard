@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -101,8 +102,7 @@ def get_job(session: Session, job_id: int) -> Job | None:
     return session.get(Job, job_id)
 
 
-def query_jobs(
-    session: Session,
+def _job_conditions(
     *,
     q: str | None = None,
     source: str | None = None,
@@ -115,12 +115,9 @@ def query_jobs(
     tag: str | None = None,
     days: int = 3,
     include_active: bool = False,
-    sort: str = "posted_desc",
-    limit: int = 50,
-    offset: int = 0,
-) -> tuple[list[Job], int]:
-    """Return ``(jobs, total)`` for the dashboard filters."""
-    conditions = [Job.is_active.is_(True)]
+) -> list[Any]:
+    """Build the shared SQLAlchemy filters for jobs and stats."""
+    conditions: list[Any] = [Job.is_active.is_(True)]
 
     days = max(days, 0)
     cutoff = datetime.now(UTC) - timedelta(days=days) if days > 0 else None
@@ -175,6 +172,42 @@ def query_jobs(
         # JSON is stored as text on SQLite; cast avoids JSON-specific operators.
         conditions.append(cast(Job.security_tags, Text).like(f'%"{tag}"%'))
 
+    return conditions
+
+
+def query_jobs(
+    session: Session,
+    *,
+    q: str | None = None,
+    source: str | None = None,
+    role: str | None = "technical",
+    language: str | None = None,
+    location: str | None = None,
+    location_scope: str | None = "japan",
+    remote: str | None = None,
+    visa: str | None = None,
+    tag: str | None = None,
+    days: int = 3,
+    include_active: bool = False,
+    sort: str = "posted_desc",
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[Job], int]:
+    """Return ``(jobs, total)`` for the dashboard filters."""
+    conditions = _job_conditions(
+        q=q,
+        source=source,
+        role=role,
+        language=language,
+        location=location,
+        location_scope=location_scope,
+        remote=remote,
+        visa=visa,
+        tag=tag,
+        days=days,
+        include_active=include_active,
+    )
+
     stmt = select(Job).where(and_(*conditions))
     total = session.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
 
@@ -190,17 +223,65 @@ def query_jobs(
     return jobs, total
 
 
-def get_stats(session: Session, *, window_days: int = 3) -> dict[str, Any]:
-    cutoff = datetime.now(UTC) - timedelta(days=window_days)
+def get_stats(
+    session: Session,
+    *,
+    window_days: int = 3,
+    q: str | None = None,
+    source: str | None = None,
+    role: str | None = "technical",
+    language: str | None = None,
+    location: str | None = None,
+    location_scope: str | None = "japan",
+    remote: str | None = None,
+    visa: str | None = None,
+    tag: str | None = None,
+    include_active: bool = False,
+) -> dict[str, Any]:
+    """Return summary counts for the current filter set.
+
+    ``total_jobs``, ``new_in_window`` and ``relocation_friendly`` respect the
+    active filters. The ``by_*`` breakdowns are intentionally global so they
+    can populate filter controls without collapsing to the current selection.
+    """
+    conditions = _job_conditions(
+        q=q,
+        source=source,
+        role=role,
+        language=language,
+        location=location,
+        location_scope=location_scope,
+        remote=remote,
+        visa=visa,
+        tag=tag,
+        days=window_days,
+        include_active=include_active,
+    )
 
     total_jobs = session.execute(
-        select(func.count()).select_from(Job).where(Job.is_active.is_(True))
+        select(func.count()).select_from(Job).where(and_(*conditions))
     ).scalar_one()
 
-    new_in_window = session.execute(
+    if window_days > 0:
+        cutoff = datetime.now(UTC) - timedelta(days=window_days)
+        new_conditions = [
+            *conditions,
+            Job.posted_at.is_not(None),
+            Job.posted_at >= cutoff,
+        ]
+        new_in_window = session.execute(
+            select(func.count()).select_from(Job).where(and_(*new_conditions))
+        ).scalar_one()
+    else:
+        new_in_window = 0
+
+    relocation_friendly = session.execute(
         select(func.count())
         .select_from(Job)
-        .where(Job.is_active.is_(True), Job.posted_at.is_not(None), Job.posted_at >= cutoff)
+        .where(
+            and_(*conditions),
+            or_(Job.overseas_eligible == 1, Job.visa_sponsorship.is_not(None)),
+        )
     ).scalar_one()
 
     by_source_rows = session.execute(
@@ -209,7 +290,7 @@ def get_stats(session: Session, *, window_days: int = 3) -> dict[str, Any]:
         .group_by(Job.source)
         .order_by(Job.source)
     ).all()
-    by_source = {source: count for source, count in by_source_rows}
+    by_source = {source_name: count for source_name, count in by_source_rows}
 
     by_role_rows = session.execute(
         select(Job.role_category, func.count())
@@ -219,14 +300,14 @@ def get_stats(session: Session, *, window_days: int = 3) -> dict[str, Any]:
     ).all()
     by_role_category = {category: count for category, count in by_role_rows}
 
-    relocation_friendly = session.execute(
-        select(func.count())
-        .select_from(Job)
-        .where(
-            Job.is_active.is_(True),
-            or_(Job.overseas_eligible == 1, Job.visa_sponsorship.is_not(None)),
-        )
-    ).scalar_one()
+    tag_rows = session.execute(
+        select(Job.security_tags).where(Job.is_active.is_(True))
+    ).scalars()
+    tag_counter: Counter[str] = Counter()
+    for tags in tag_rows:
+        if isinstance(tags, list):
+            tag_counter.update(str(item) for item in tags if item)
+    by_tag = dict(sorted(tag_counter.items()))
 
     last_run = session.execute(
         select(ScrapeRun).order_by(ScrapeRun.id.desc()).limit(1)
@@ -237,8 +318,34 @@ def get_stats(session: Session, *, window_days: int = 3) -> dict[str, Any]:
         "new_in_window": new_in_window,
         "by_source": by_source,
         "by_role_category": by_role_category,
+        "by_tag": by_tag,
         "relocation_friendly": relocation_friendly,
         "last_run": last_run,
+    }
+
+
+def get_source_health(session: Session) -> dict[str, dict[str, Any]]:
+    """Return the latest result and last success for each source.
+
+    The local database is small, so scanning source results newest-first is
+    simpler than a window-function query and keeps SQLite compatibility.
+    """
+    rows = session.execute(
+        select(ScrapeSourceResult).order_by(ScrapeSourceResult.id.desc())
+    ).scalars()
+    latest: dict[str, ScrapeSourceResult] = {}
+    last_success: dict[str, datetime] = {}
+    for row in rows:
+        latest.setdefault(row.source, row)
+        if row.status == "success" and row.source not in last_success:
+            last_success[row.source] = row.finished_at or row.started_at
+    return {
+        source: {
+            "last_status": latest.get(source).status if source in latest else "never",
+            "last_success_at": last_success.get(source),
+            "last_error": latest.get(source).error_message if source in latest else None,
+        }
+        for source in set(latest) | set(last_success)
     }
 
 

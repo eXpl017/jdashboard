@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 from app import repository, schemas
 from app.db import get_session
 from app.models import Job
+from app.scrapers.registry import SOURCE_NAMES
 
 router = APIRouter()
 
 
 def _to_job_read(job: Job, *, window_days: int) -> schemas.JobRead:
     item = schemas.JobRead.model_validate(job)
+    item.source_name = SOURCE_NAMES.get(job.source, job.source)
     if window_days > 0:
         first_seen = job.first_seen_at
         if first_seen.tzinfo is None:

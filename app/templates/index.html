@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Japan Cybersecurity Jobs{% endblock %}
+{% block content %}
+<header class="app-header">
+  <div class="app-header__inner">
+    <div class="app-header__heading">
+      <h1>Japan Cybersecurity Jobs</h1>
+      <p class="app-header__subtitle">
+        Public listings from Michael Page, JapanDev, TokyoDev, Daijob and Robert Half — refreshed on demand.
+      </p>
+    </div>
+    <div class="app-header__actions">
+      <p class="app-header__last-refresh" id="last-refresh">Last refresh: never</p>
+      <button type="button" class="button button--primary" id="refresh-button">
+        <span id="refresh-button-label">Refresh now</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<section class="summary" id="summary" aria-label="Dashboard summary">
+  <article class="summary-card">
+    <h2 class="summary-card__label">Jobs</h2>
+    <p class="summary-card__value" id="stat-total-jobs">—</p>
+    <p class="summary-card__hint">active in view</p>
+  </article>
+  <article class="summary-card">
+    <h2 class="summary-card__label">New in window</h2>
+    <p class="summary-card__value" id="stat-new-in-window">—</p>
+    <p class="summary-card__hint" id="stat-new-in-window-hint">last postings</p>
+  </article>
+  <article class="summary-card">
+    <h2 class="summary-card__label">Sources</h2>
+    <p class="summary-card__value" id="stat-sources-healthy">—</p>
+    <p class="summary-card__hint" id="stat-sources-healthy-hint">healthy of enabled</p>
+  </article>
+  <article class="summary-card">
+    <h2 class="summary-card__label">Last run</h2>
+    <p class="summary-card__value" id="stat-last-run">—</p>
+    <p class="summary-card__hint" id="stat-last-run-hint">status</p>
+  </article>
+</section>
+
+<section class="filters" aria-label="Job filters">
+  <form class="filters" id="filters" autocomplete="off">
+    <div class="filters__grid">
+      <div class="field">
+        <label for="filter-q">Search</label>
+        <input id="filter-q" name="q" type="search" placeholder="Title, company, keyword" />
+      </div>
+      <div class="field">
+        <label for="filter-source">Source</label>
+        <select id="filter-source" name="source">
+          <option value="">All sources</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-role">Role</label>
+        <select id="filter-role" name="role">
+          <option value="technical">Technical (engineering / operations)</option>
+          <option value="all">All roles</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-language">Language</label>
+        <select id="filter-language" name="language">
+          <option value="">Any</option>
+          <option value="en">English</option>
+          <option value="ja">Japanese</option>
+          <option value="bilingual">Bilingual</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-location">Location</label>
+        <input id="filter-location" name="location" type="search" placeholder="City or region" />
+      </div>
+      <div class="field">
+        <label for="filter-location-scope">Location scope</label>
+        <select id="filter-location-scope" name="location_scope">
+          <option value="japan">Japan (default)</option>
+          <option value="japan_onsite">Japan · onsite</option>
+          <option value="japan_hybrid">Japan · hybrid</option>
+          <option value="japan_remote">Japan · remote</option>
+          <option value="international_remote">International remote</option>
+          <option value="unknown">Unknown</option>
+          <option value="all">All locations</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-remote">Remote</label>
+        <select id="filter-remote" name="remote">
+          <option value="">Any</option>
+          <option value="remote">Remote</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="onsite">On-site</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-visa">Visa / eligibility</label>
+        <select id="filter-visa" name="visa">
+          <option value="">Any</option>
+          <option value="overseas">Overseas eligible</option>
+          <option value="sponsored">Visa sponsorship</option>
+          <option value="either">Overseas eligible or sponsorship</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-tag">Tag</label>
+        <select id="filter-tag" name="tag">
+          <option value="">Any</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-days">Window</label>
+        <select id="filter-days" name="days">
+          <option value="3">Last 3 days</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="0">All active</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filter-sort">Sort</label>
+        <select id="filter-sort" name="sort">
+          <option value="posted_desc">Newest first</option>
+          <option value="posted_asc">Oldest first</option>
+          <option value="company">Company A–Z</option>
+          <option value="relevance">Relevance</option>
+        </select>
+      </div>
+      <div class="field field--inline">
+        <label class="checkbox" for="filter-include-active">
+          <input
+            id="filter-include-active"
+            name="include_active"
+            type="checkbox"
+          />
+          Include older listings
+        </label>
+      </div>
+      <div class="field">
+        <button type="button" class="button" id="filters-clear">Clear filters</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<main id="main" class="app-main">
+  <div id="job-list" class="job-list" aria-live="polite">
+    <div class="job-list__state job-list__state--empty" id="jobs-empty">
+      <p class="job-list__empty-title">No jobs yet</p>
+      <p class="job-list__empty-text">
+        Press <strong>Refresh now</strong> to fetch the latest public listings.
+      </p>
+    </div>
+  </div>
+</main>
+
+<template id="job-card-template">
+  <article class="job-card">
+    <header class="job-card__header">
+      <h3 class="job-card__title">
+        <a class="job-card__link" href="#" target="_blank" rel="noopener noreferrer"></a>
+      </h3>
+      <span class="job-card__new" hidden>New</span>
+    </header>
+    <p class="job-card__meta">
+      <span class="job-card__company"></span>
+      <span class="job-card__location"></span>
+      <span class="job-card__salary"></span>
+      <span class="job-card__source"></span>
+      <time class="job-card__posted" datetime=""></time>
+    </p>
+    <div class="job-card__badges" data-badges></div>
+    <details class="job-card__details">
+      <summary>Details</summary>
+      <p class="job-card__description"></p>
+    </details>
+  </article>
+</template>
+
+<section class="refresh-panel" id="refresh-panel" aria-labelledby="refresh-panel-heading">
+  <h2 id="refresh-panel-heading">Refresh status</h2>
+  <p class="refresh-panel__status" id="refresh-status-line" aria-live="polite">No refresh yet.</p>
+  <ul class="refresh-panel__sources" id="refresh-source-list"></ul>
+  <button type="button" class="button" id="refresh-again" hidden>Refresh again</button>
+</section>
+
+<footer class="app-footer">
+  <p>
+    Data comes from public job boards. Refreshes run only when you press
+    <strong>Refresh now</strong>.
+  </p>
+</footer>
+{% endblock %}

@@ -24,6 +24,7 @@ class JobRead(BaseModel):
     id: int
     fingerprint: str
     source: str
+    source_name: str = ""
     source_job_id: str | None = None
     url: str
     title: str
@@ -86,8 +87,23 @@ class StatsResponse(BaseModel):
     new_in_window: int
     by_source: dict[str, int]
     by_role_category: dict[str, int]
+    by_tag: dict[str, int] = Field(default_factory=dict)
     relocation_friendly: int
     last_run: ScrapeRunRead | None = None
+
+
+class SourceRead(BaseModel):
+    id: str
+    name: str
+    url: str
+    enabled: bool = True
+    last_status: str = "never"
+    last_success_at: UtcDateTime | None = None
+    last_error: str | None = None
+
+
+class SourceListResponse(BaseModel):
+    sources: list[SourceRead]
 
 
 class RefreshRequest(BaseModel):
