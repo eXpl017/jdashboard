@@ -1,7 +1,16 @@
 # Verification Playbook
 
 How to run the dashboard and check that it behaves. Every command here is
-copy-pasteable from the repository root.
+copy-pasteable **from the repository root** (`/home/expl017/projects/jdashboard`):
+
+```bash
+cd /home/expl017/projects/jdashboard
+```
+
+The root matters: `make` needs the `Makefile`, `docker compose` needs
+`docker-compose.yml`, `uv run python -m scripts...` needs the `app/` and
+`scripts/` packages on the path, and `sqlite3 data/jobs.db` uses a path
+relative to it.
 
 ## 0. Choose how to run it
 
