@@ -36,7 +36,8 @@ Start with [PLAN.md](PLAN.md), then read the topic docs in [docs/](docs/).
 ## Quick start
 
 The API is runnable now; the dashboard UI is served at
-<http://127.0.0.1:8000/>.
+<http://127.0.0.1:8001/> (development server) or
+<http://127.0.0.1:8000/> (container).
 
 ```bash
 # 1. Install
@@ -45,11 +46,11 @@ uv sync --extra dev
 # 2. Configure
 cp .env.example .env
 
-# 3. Run
-uv run uvicorn app.main:app --reload
+# 3. Run (development server on port 8001; the container uses 8000)
+make run
 
-# 4. Open http://127.0.0.1:8000/ for the dashboard
-#    or http://127.0.0.1:8000/docs for the API
+# 4. Open http://127.0.0.1:8001/ for the dashboard
+#    or http://127.0.0.1:8001/docs for the API
 ```
 
 ## Manual refresh and source inspection

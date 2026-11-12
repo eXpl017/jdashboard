@@ -35,10 +35,14 @@ Edit `.env` only if you need to change the database path, port, or rate limits.
 ## 3. Run the dashboard
 
 ```bash
-uv run uvicorn app.main:app --reload
+make run
 ```
 
-Open <http://127.0.0.1:8000>.
+Open <http://127.0.0.1:8001>.
+
+`make run` starts the development server on **port 8001** and checks the port
+first, so it never collides with the container, which publishes **port 8000**.
+Override the dev port with `make run DEV_PORT=8002`.
 
 The app binds to `127.0.0.1` by default. Do not expose it to the internet
 without authentication.
@@ -98,7 +102,8 @@ Image details:
   dependencies (`uv sync --frozen --no-dev --no-install-project`).
 - Runs as the unprivileged user `appuser` (uid 10001).
 - Listens on `0.0.0.0:8000` inside the container; Compose publishes it on
-  `127.0.0.1:8000` by default.
+  `127.0.0.1:8000` by default (the host dev server uses 8001, so both can run
+  at the same time).
 - Health check hits `GET /health` every 30 s.
 - The SQLite database lives in the `dashboard-data` volume at `/data`.
 
@@ -306,7 +311,7 @@ workflow.
 ### Local (v1)
 
 ```bash
-uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+make run                  # development server on 127.0.0.1:8001
 ```
 
 ### LAN (not recommended without auth)

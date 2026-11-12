@@ -5,21 +5,24 @@ copy-pasteable from the repository root.
 
 ## 0. Choose how to run it
 
-Two ways to run the same app. They do **not** share a database.
+Two ways to run the same app. They use **different ports** and **different
+databases**, so both can run side by side.
 
-| | Docker (recommended) | Host |
+| | Docker (recommended) | Host development server |
 | --- | --- | --- |
-| Start | `docker compose up -d` | `uv run uvicorn app.main:app --reload` |
-| URL | http://127.0.0.1:8000 | http://127.0.0.1:8000 |
+| Start | `docker compose up -d` | `make run` |
+| URL | http://127.0.0.1:8000 | http://127.0.0.1:8001 |
 | Database | named volume `jdashboard_dashboard-data` at `/data` | `./data/jobs.db` |
 | Logs | `docker compose logs -f` | terminal output |
 
-**Port conflict:** if the container is running, the host server cannot bind
-port 8000. Stop the container first (`docker compose down`), or run the host
-server on another port:
+**No more port conflicts:** the container publishes 8000 and the development
+server uses 8001. `make run` checks the port before starting and prints an
+actionable message if it is taken:
 
 ```bash
-uv run uvicorn app.main:app --reload --port 8001
+make run                      # port 8001
+make run DEV_PORT=8002        # pick another port
+uv run python scripts/check_port.py 8001   # check any port
 ```
 
 First-time setup (host):
@@ -31,19 +34,24 @@ cp .env.example .env
 
 ## 1. Quick health check
 
+Set `BASE` to whichever instance you are checking - the container publishes
+8000, the development server 8001:
+
 ```bash
-curl -s http://127.0.0.1:8000/health          # {"status":"ok","version":"0.1.0"}
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/        # 200 (HTML)
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/static/app.css   # 200
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/static/app.js    # 200
+BASE=http://127.0.0.1:8000   # container
+# BASE=http://127.0.0.1:8001   # development server
+
+curl -s $BASE/health          # {"status":"ok","version":"0.1.0"}
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/              # 200 (HTML)
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/static/app.css   # 200
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/static/app.js    # 200
 ```
 
-Interactive API docs: <http://127.0.0.1:8000/docs> (Swagger),
-`/redoc`, and `/openapi.json`.
+Interactive API docs: `$BASE/docs` (Swagger), `/redoc`, and `/openapi.json`.
 
 ## 2. What to check in the browser
 
-Open <http://127.0.0.1:8000/>.
+Open <http://127.0.0.1:8000/> (container) or <http://127.0.0.1:8001/> (dev server).
 
 **Layout and chrome**
 
@@ -94,28 +102,30 @@ Open <http://127.0.0.1:8000/>.
 ## 3. API checks (expected behaviour)
 
 ```bash
+BASE=http://127.0.0.1:8000   # container (use 8001 for the dev server)
+
 # Defaults: role=technical, location_scope=japan, days=3
-curl -s 'http://127.0.0.1:8000/api/jobs' | python3 -m json.tool | head -40
+curl -s '$BASE/api/jobs' | python3 -m json.tool | head -40
 
 # Widen the role and location filters: more rows than the default query
-curl -s 'http://127.0.0.1:8000/api/jobs?role=all&location_scope=all' | python3 -c \
+curl -s '$BASE/api/jobs?role=all&location_scope=all' | python3 -c \
   'import json,sys; print("total:", json.load(sys.stdin)["total"])'
 
 # Per-source counts and the last run
-curl -s 'http://127.0.0.1:8000/api/stats' | python3 -m json.tool
+curl -s '$BASE/api/stats' | python3 -m json.tool
 
 # Source metadata and health
-curl -s 'http://127.0.0.1:8000/api/sources' | python3 -m json.tool
+curl -s '$BASE/api/sources' | python3 -m json.tool
 
 # Unknown job -> 404
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/api/jobs/999999
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/jobs/999999
 
 # Start a refresh -> 202; a second one while running -> 409
-curl -s -X POST http://127.0.0.1:8000/api/refresh \
+curl -s -X POST $BASE/api/refresh \
   -H 'Content-Type: application/json' -d '{"window_days":3}'
 
 # Progress
-curl -s http://127.0.0.1:8000/api/refresh/status | python3 -m json.tool
+curl -s $BASE/api/refresh/status | python3 -m json.tool
 ```
 
 Things to look for:
@@ -216,7 +226,7 @@ sg docker -c "docker compose down -v"               # stop and delete the volume
 
 | Symptom | Check | Fix |
 | --- | --- | --- |
-| "Address already in use" on 8000 | `docker compose ps` | `docker compose down`, or run on `--port 8001` |
+| "Address already in use" | `uv run python scripts/check_port.py <port>` | stop the other process, or `make run DEV_PORT=<other>` |
 | Empty list, no errors | `curl .../api/refresh/status` | widen the Window filter, or press Refresh |
 | A source shows `error` | `docker compose logs dashboard` | read the message; if it is a 403/anti-bot, disable the source rather than working around it |
 | Container unhealthy | `docker compose logs dashboard` | config or database problem, not a network one |

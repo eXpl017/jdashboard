@@ -119,6 +119,11 @@ CREATE INDEX idx_job_tags_tag ON job_tags(tag);
 For v1, a JSON column plus `LIKE` is acceptable for a few hundred jobs. The
 normalized table is the cleaner choice if tag filters become important.
 
+**Current implementation:** the table is created by the schema but is not
+written to. Tags live in `jobs.security_tags` as a JSON text column, and the
+tag filter matches it with `CAST(security_tags AS TEXT) LIKE '%"tag"%'`. The
+table is kept so a future migration can populate it without a schema change.
+
 ### `scrape_runs`
 
 ```sql
@@ -431,11 +436,11 @@ WHERE first_seen_at >= datetime('now', '-3 days')
 ORDER BY first_seen_at DESC;
 
 -- Jobs from one source with a security tag
+-- (tags are stored as JSON text in jobs.security_tags; job_tags is not written in v1)
 SELECT j.*
 FROM jobs j
-JOIN job_tags t ON t.job_id = j.id
 WHERE j.source = 'michael_page'
-  AND t.tag = 'soc'
+  AND CAST(j.security_tags AS TEXT) LIKE '%"soc"%'
 ORDER BY j.posted_at DESC;
 
 -- Source health for the latest run
