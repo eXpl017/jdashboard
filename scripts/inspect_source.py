@@ -8,9 +8,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.config import settings
+from app.logging_config import configure_logging
 from app.scrapers.base import BaseScraper, ScrapeResult
 from app.scrapers.registry import build_registry
 from app.services.http import HttpClient
@@ -43,13 +44,18 @@ def _job_payload(scraper: BaseScraper, job) -> dict[str, object]:
     }
 
 
+def _since(days: int) -> datetime:
+    """Return the timezone-aware UTC cutoff the scrapers expect."""
+    return datetime.now(UTC) - timedelta(days=days)
+
+
 async def run_source(source_id: str, days: int) -> dict[str, object]:
     registry = build_registry(HttpClient(settings), settings)
     scraper = registry.get(source_id)
     if scraper is None:
         raise SystemExit(f"Unknown source: {source_id}")
 
-    result: ScrapeResult = await scraper.scrape(datetime.utcnow() - timedelta(days=days))
+    result: ScrapeResult = await scraper.scrape(_since(days))
     jobs = [_job_payload(scraper, job) for job in result.jobs]
     return {
         "source": source_id,
@@ -70,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.days < 1 or args.days > 30:
         parser.error("--days must be between 1 and 30")
+
+    configure_logging()
 
     result = asyncio.run(run_source(args.source, args.days))
     jobs = list(result.get("jobs") or [])

@@ -12,6 +12,7 @@ import json
 
 from app.config import settings
 from app.db import SessionLocal
+from app.logging_config import configure_logging
 from app.scrapers.base import BaseScraper
 from app.scrapers.registry import build_registry
 from app.services.http import HttpClient
@@ -69,6 +70,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.window_days < 1 or args.window_days > 30:
         parser.error("--window-days must be between 1 and 30")
+
+    configure_logging()
 
     async def _execute() -> dict[str, object]:
         return await run_refresh(args.window_days, args.source)
