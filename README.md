@@ -153,6 +153,7 @@ See [docs/sources.md](docs/sources.md) for the evidence and caveats.
 | [docs/ui.md](docs/ui.md) | Minimal UI and HTTP API specification |
 | [docs/roadmap.md](docs/roadmap.md) | Ordered implementation phases |
 | [docs/operations.md](docs/operations.md) | Setup, run, troubleshoot, add a source |
+| [docs/verification.md](docs/verification.md) | Verification playbook: run the app and check it |
 | [docs/decisions.md](docs/decisions.md) | Architecture decision records |
 | [docs/questions.md](docs/questions.md) | Decisions needed from you |
 | [docs/tasks/](docs/tasks/) | Task briefs for AI-assisted implementation |
