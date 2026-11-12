@@ -18,10 +18,13 @@ def _clean_json_text(raw: str) -> str:
 def _iter_objects(data: Any) -> Iterator[dict[str, Any]]:
     if isinstance(data, dict):
         yield data
-        graph = data.get("@graph")
-        if isinstance(graph, list):
-            for item in graph:
-                yield from _iter_objects(item)
+        for key in ("@graph", "mainEntity"):
+            nested = data.get(key)
+            if isinstance(nested, list):
+                for item in nested:
+                    yield from _iter_objects(item)
+            elif isinstance(nested, dict):
+                yield from _iter_objects(nested)
     elif isinstance(data, list):
         for item in data:
             yield from _iter_objects(item)

@@ -16,7 +16,7 @@ expect, and what was deliberately excluded.
 | JapanDev | `japan_dev` | `https://japan-dev.com/security-jobs-in-japan` | JSON-LD `JobPosting` | `datePosted` | 37 links, ~7 security-titled |
 | TokyoDev | `tokyo_dev` | `https://www.tokyodev.com/jobs/security` | JSON-LD `JobPosting`; Atom feed | `datePosted` | 9 |
 | Daijob | `daijob` | `https://www.daijob.com/en/jobs/search?js_jt%5B%5D=503&fl=1&pg=0` | HTML detail page | `Activated` / `Updated` | 22 category, 242 keyword |
-| Robert Half Japan | `robert_half` | `https://www.roberthalf.com/jp/en/jobs` | Embedded JSON + detail page | `date_posted` | ~15 per page |
+| Robert Half Japan | `robert_half` | `https://www.roberthalf.com/jp/en/jobs` | Embedded JSON + detail page | `date_posted` | ~235 total, 25 per page |
 
 All five:
 
@@ -255,9 +255,15 @@ https://www.roberthalf.com/jp/en/jobs?pagenumber=2
 
 - Server-rendered HTML with an embedded JSON payload:
   `aemSettings.rh_job_search.initialResults = JSON.parse('...')`.
-- The payload contains fields such as `date_posted`, `date_end`, `functional_role`,
-  `city`, `country`, `payrate_min`, `payrate_max`, `salary_currency`, `remote`,
-  `emptype`, `job_detail_url`, `summary`, and `industry`.
+- The payload contains fields such as `jobtitle`, `functional_role`,
+  `date_posted`, `date_end`, `city`, `country`, `payrate_min`, `payrate_max`,
+  `salary_currency`, `remote`, `emptype`, `job_detail_url`, `summary`,
+  `description`, and `industry`.
+- `description` is the full HTML description, so the listing alone is usually
+  enough. `summary` is a one-line teaser.
+- The listing is broad (finance, HR, legal, IT) rather than security-only.
+- The live listing reported ~235 jobs and returns 25 per page. Pages overlap by
+  a few jobs, so deduplicate by `unique_job_number`/`sf_jo_number`.
 - A public search endpoint was also observed:
   `https://prd-dr.jps.api.roberthalfonline.com/search`.
   The embedded payload is sufficient for v1; the endpoint is a fallback.
@@ -270,8 +276,12 @@ https://www.roberthalf.com/jp/en/jobs?pagenumber=2
 https://www.roberthalf.com/jp/en/job/<city>/<slug>/<reference>-jpen
 ```
 
-- Contains the full description and structured job metadata.
+- Repeats the job in
+  `aemSettings.rh_job_search.jobDetails = JSON.parse('...')`.
+- Also contains a schema.org `JobPosting` nested under the `WebPage`'s
+  `mainEntity`.
 - `date_posted` is a full ISO 8601 timestamp with timezone (`Z`).
+- `emptype` uses `Perm` and `Temp`; map them to full-time and contract.
 
 **robots.txt notes**
 
@@ -283,10 +293,10 @@ https://www.roberthalf.com/jp/en/job/<city>/<slug>/<reference>-jpen
 
 1. Fetch `/jp/en/jobs`, then subsequent `?pagenumber=N` pages.
 2. Parse the embedded JSON payload (preferred) or the search API.
-3. Stop paging when all jobs on a page are older than the cutoff.
-4. Filter by security keywords.
-5. Fetch detail pages only if the description is missing or too short.
-6. Filter by `date_posted`.
+3. Stop paging when every new job on a page is older than the cutoff.
+4. Store all role families; the UI hides non-technical roles.
+5. Fetch detail pages only if the description is missing or too short
+   (capped at 10 per run).
 
 ---
 
@@ -373,7 +383,7 @@ https://www.roberthalf.com/jp/en/job/<city>/<slug>/<reference>-jpen
 | JapanDev | A few security roles; dates may be older | Landing page changed or no new security roles |
 | TokyoDev | 0–2 new security roles; category has ~9 active | No new security posts in window |
 | Daijob | A few new security roles; category has ~22 | Category ID changed or search redirect changed |
-| Robert Half | A few new IT/security roles per page | Payload key changed or keyword filter too strict |
+| Robert Half | ~235 active roles; most are non-technical, and security roles are often GRC/consulting (hidden by default) | Payload key changed, pagination changed, or all roles older than window |
 
 A source returning 0 jobs is not automatically an error. The UI should
 distinguish "success, 0 new" from "failed".

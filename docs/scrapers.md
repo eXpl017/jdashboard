@@ -293,31 +293,54 @@ IAM
 
 **Flow**
 
-1. `GET https://www.roberthalf.com/jp/en/jobs`
+1. `GET https://www.roberthalf.com/jp/en/jobs`, then
+   `?pagenumber=2`, `?pagenumber=3`, ... (25 jobs per page).
 2. Extract the embedded JSON:
    `aemSettings.rh_job_search.initialResults = JSON.parse('...')`.
-3. Parse the JSON string (unescape `\x22`, `\u002D`, etc.).
+3. Decode the JavaScript string literal (`\x22`, `\x27`, `\u002D`, `\/`, and
+   standard escapes) and parse the JSON.
 4. Iterate jobs; map:
-   - `title` ← `functional_role` or the page title
-   - `company` ← "Robert Half Japan" (agency) or parsed client
-   - `location` ← `city` + `country`
-   - `posted_at` ← `date_posted`
+   - `title` ← `jobtitle` (fall back to `functional_role`)
+   - `company` ← "Robert Half Japan" (the agency)
+   - `location` ← `city` + `country`; `JP` becomes `Japan`
+   - `posted_at` ← `date_posted` (full ISO timestamp with `Z`)
    - `expires_at` ← `date_end`
-   - `salary_min/max` ← `payrate_min/max` (convert `8.0M` → 8,000,000)
-   - `remote_type` ← `remote`
-   - `employment_type` ← `emptype`
+   - `salary_min/max` ← `payrate_min/max` (convert `8.0M` → 8,000,000);
+     fall back to `payrate_yearly` only when both bounds are missing
+   - `remote_type` ← `remote` (`Remote`, `Hybrid`, `On-site`)
+   - `employment_type` ← `emptype` (`Perm` → full-time,
+     `Temp` → contract)
    - `url` ← `job_detail_url`
    - `source_job_id` ← `sf_jo_number`
-   - `description_text` ← `summary` or detail page
-   - `language` ← detect; the `/jp/en/` listing is mostly English but the
-     detail text can be Japanese
+   - `description_text` ← the listing's `description` HTML, or `summary`
+   - `language` ← detect; the `/jp/en/` shell is English but many
+     descriptions are Japanese
    - `overseas_eligible` ← only from explicit text
-5. If the summary is too short, fetch the detail page.
-6. Paginate with `?pagenumber=2`, stopping when all jobs on a page are older
-   than the cutoff.
-7. Classify. Derive `location_scope` from `city`/`country` + `remote`; a
-   non-Japan city with no Japan eligibility is `international_remote` and is
-   hidden by default.
+5. If the listing description and summary are both shorter than 80 characters,
+   fetch the detail page (capped at 10 per run). The detail page repeats the
+   job in `aemSettings.rh_job_search.jobDetails = JSON.parse('...')`; its
+   JSON-LD `JobPosting` is nested under `mainEntity` as a second fallback.
+6. Stop pagination when every new job on a page is older than the cutoff, when
+   a page is empty, or after 20 pages as a safety cap.
+7. Classify with the shared title-first classifier (this is not a security
+   category). Derive `location_scope` from `city`/`country` + `remote`:
+   Japan → `japan_*`; a non-Japan remote role → `international_remote`; a
+   non-Japan on-site role → `unknown`. Both non-Japan cases are hidden by the
+   default filter.
+
+**Notes**
+
+- Pages overlap by a few jobs; deduplicate by `unique_job_number`, then
+  `sf_jo_number`, then canonical URL.
+- The listing payload already includes the full description, so detail fetches
+  are rare in practice.
+- The listing is broad (finance, HR, legal, etc.), not just IT. Store every row
+  and let the UI's technical-role filter hide the rest.
+- Live observation (Nov 2026): a 30-day window had ~80 roles, mostly
+  finance/HR/legal. The security roles were GRC/consulting (Cybersecurity PMO,
+  Cybersecurity Compliance Assessor, IT Security Consultant), which the default
+  technical filter hides. Expect Robert Half to contribute few
+  engineering/operations rows on a given day.
 
 **Fallback**
 
@@ -328,8 +351,9 @@ IAM
 **Gotchas**
 
 - The `keywords` query parameter did not reliably filter during planning.
-- The embedded JSON is escaped; write a helper and test it with a fixture.
+- The embedded JSON is escaped; the unescape helper is tested with a fixture.
 - Salary values like `8.0M` need a parser.
+- `Perm`/`Temp` are Robert Half abbreviations, not standard employment labels.
 
 ## 5. Fixtures
 

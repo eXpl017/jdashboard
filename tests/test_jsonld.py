@@ -29,6 +29,21 @@ def test_extracts_job_posting_from_graph():
     assert result["title"] == "SOC Analyst"
 
 
+def test_extracts_job_posting_from_main_entity():
+    payload = {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "mainEntity": {
+            "@type": "JobPosting",
+            "title": "Cloud Security Architect",
+        },
+    }
+    html = f'<script type="application/ld+json">{json.dumps(payload)}</script>'
+    result = extract_job_posting_jsonld(html)
+    assert result is not None
+    assert result["title"] == "Cloud Security Architect"
+
+
 def test_extracts_job_posting_from_list():
     payload = [
         {"@type": "WebPage", "name": "Jobs"},
