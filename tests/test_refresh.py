@@ -145,6 +145,30 @@ async def test_refresh_partial_failure_keeps_good_jobs(session_factory):
 
 
 @pytest.mark.asyncio
+async def test_refresh_marks_expired_jobs_inactive(session_factory):
+    expired_job = _scraped(
+        source="fake",
+        url="https://example.com/jobs/expired",
+        expires_at=datetime.now(UTC) - timedelta(days=1),
+    )
+    service = RefreshService(
+        session_factory=session_factory,
+        scrapers={"fake": FakeScraper(jobs=[expired_job])},
+    )
+    await service.start()
+    await service.wait()
+    assert service.snapshot() is not None
+    assert service.snapshot().status == "success"
+
+    db = session_factory()
+    try:
+        job = db.execute(select(Job)).scalar_one()
+        assert job.is_active is False
+    finally:
+        db.close()
+
+
+@pytest.mark.asyncio
 async def test_second_start_raises_while_running(session_factory):
     gate = asyncio.Event()
     service = RefreshService(

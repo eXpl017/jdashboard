@@ -177,25 +177,27 @@ run a live smoke test, update docs.
 
 **Tasks**
 
-- Add structured logging.
-- Add request caps and per-source timeouts.
-- Add retry/backoff tests.
-- Add robots-disallowed test.
-- Add parser edge-case tests (missing salary, Japanese title, remote, expired).
-- Add `scripts/refresh.py` and `scripts/inspect_source.py`.
-- Complete `README.md` and `docs/operations.md`.
-- Add a "how to add a source" walkthrough.
-- Review for secrets and unsafe logging.
-- Run a full live refresh and record the result.
+- [x] Add structured logging (single-line JSON via `JsonLogFormatter`).
+- [x] Add request caps and per-source timeouts (settings already present; reused by scrapers).
+- [x] Add retry/backoff tests (HTTP layer).
+- [x] Add robots-disallowed test (HTTP layer).
+- [x] Add parser edge-case tests (missing salary, Japanese title, remote, expired; expired now inferred from `expires_at`).
+- [x] Add `scripts/refresh.py` and `scripts/inspect_source.py`.
+- [x] Complete `README.md` and `docs/operations.md`.
+- [x] Add a "how to add a source" walkthrough.
+- [x] Review for secrets and unsafe logging.
+- [x] Run a full live refresh and record the result.
 
 **Acceptance**
 
-- [ ] Full refresh completes in a reasonable time (target < 60 s).
-- [ ] One broken source yields `partial`, with a clear error.
-- [ ] `pytest` and `ruff check` pass.
-- [ ] No secrets or cookies in the repo.
-- [ ] README setup steps work from a clean environment.
-- [ ] Database survives an app restart.
+- [ ] Full refresh completes in a reasonable time (target < 60 s). Measured
+      full refresh (all sources, default 3-day window): ~2m04s, `status=success`;
+      runtime is throttle-bound by the deliberate ~1 req/s per-host policy.
+- [x] One broken source yields `partial`, with a clear error (covered by tests).
+- [x] `pytest` and `ruff check` pass (120 tests, clean).
+- [x] No secrets or cookies in the repo (reviewed).
+- [ ] README setup steps work from a clean environment (pending manual run).
+- [x] Database survives an app restart (verified live).
 
 ## Phase 6 — Optional enhancements
 

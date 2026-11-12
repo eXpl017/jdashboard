@@ -35,6 +35,19 @@ def test_upsert_is_idempotent_and_preserves_first_seen(session, make_job) -> Non
     assert count == 1
 
 
+def test_upsert_marks_expired_jobs_inactive(session, make_job) -> None:
+    expired, _ = repository.upsert_job(
+        session, make_job(fingerprint="fp-exp", is_active=False)
+    )
+    assert expired.is_active is False
+
+    refreshed, created_again = repository.upsert_job(
+        session, make_job(fingerprint="fp-exp", is_active=False)
+    )
+    assert created_again is False
+    assert refreshed.is_active is False
+
+
 def test_default_query_is_technical_and_japan_only(session, make_job) -> None:
     technical = repository.upsert_job(session, make_job(fingerprint="fp-tech"))[0]
     repository.upsert_job(

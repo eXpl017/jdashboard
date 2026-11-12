@@ -59,13 +59,13 @@ Useful for parser work and smoke tests:
 
 ```bash
 # Refresh one source and print parsed jobs without writing to the DB
-uv run python scripts/inspect_source.py michael_page --limit 3
+uv run python -m scripts.inspect_source michael_page --limit 3
 
 # Refresh all sources into the DB (same code path as the UI)
-uv run python scripts/refresh.py --window-days 3
+uv run python -m scripts.refresh --window-days 3
 
 # Refresh one source
-uv run python scripts/refresh.py --source japan_dev --window-days 3
+uv run python -m scripts.refresh --source japan_dev --window-days 3
 ```
 
 The CLI uses the same rate limits, robots checks, and normalization as the UI.
@@ -113,7 +113,8 @@ rm data/jobs.db
 
 ## 8. Logs
 
-- Console output from Uvicorn and the app.
+- Console output from Uvicorn and the app, emitted as single-line JSON objects
+  (`ts`, `level`, `logger`, `message`, plus `exc` when a traceback is attached).
 - Optional rotating file: `data/logs/app.log`.
 - Log level via `LOG_LEVEL` in `.env`.
 

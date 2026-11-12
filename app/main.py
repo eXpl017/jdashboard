@@ -1,3 +1,5 @@
+import json
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,9 +18,36 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+class JsonLogFormatter(logging.Formatter):
+    """Emit one single-line JSON object per log record."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict[str, object] = {
+            "ts": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exc"] = record.exc_text
+        return json.dumps(payload, default=str)
+
+
+def _configure_logging() -> None:
+    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(JsonLogFormatter())
+    root = logging.getLogger()
+    root.setLevel(level)
+    for existing in list(root.handlers):
+        root.removeHandler(existing)
+    root.addHandler(handler)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Prepare the SQLite file and schema. No scraping happens here."""
+    _configure_logging()
     if settings.database_url.startswith("sqlite:///"):
         db_path = settings.database_url.removeprefix("sqlite:///")
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)

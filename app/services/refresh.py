@@ -422,6 +422,7 @@ class RefreshService:
             posted_at_raw=scraped.posted_at_raw,
             source_updated_at=_as_utc(scraped.source_updated_at),
             expires_at=_as_utc(scraped.expires_at),
+            is_active=scraped.expires_at is None or scraped.expires_at > now,
             first_seen_at=now,
             last_seen_at=now,
             security_score=classification.score,

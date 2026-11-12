@@ -3,9 +3,10 @@
 A small, single-user dashboard that collects cybersecurity job listings in Japan
 from public job boards and shows the newest ones in a simple web UI.
 
-**Status: in progress.** Phases 0–3 are implemented: the app scaffold, the
-database and query API, the scraper framework plus manual refresh service, and
-all five launch-source scrapers. The web UI lands in Phase 4.
+**Status: in progress.** Phases 0–4 are implemented: the app scaffold, the
+database and query API, the scraper framework plus manual refresh service, all
+five launch-source scrapers, and the minimal web UI. Phase 5 covers hardening,
+scripts, and documentation.
 Start with [PLAN.md](PLAN.md), then read the topic docs in [docs/](docs/).
 
 ## What it will do
@@ -34,7 +35,8 @@ Start with [PLAN.md](PLAN.md), then read the topic docs in [docs/](docs/).
 
 ## Quick start
 
-The API is runnable now; the dashboard UI lands in Phase 4.
+The API is runnable now; the dashboard UI is served at
+<http://127.0.0.1:8000/>.
 
 ```bash
 # 1. Install
@@ -46,8 +48,25 @@ cp .env.example .env
 # 3. Run
 uv run uvicorn app.main:app --reload
 
-# 4. Open http://127.0.0.1:8000/docs to inspect the API
+# 4. Open http://127.0.0.1:8000/ for the dashboard
+#    or http://127.0.0.1:8000/docs for the API
 ```
+
+## Manual refresh and source inspection
+
+```bash
+# Refresh all sources into the local database (same path as the UI button)
+uv run python -m scripts.refresh --window-days 3
+
+# Refresh a single source
+uv run python -m scripts.refresh --source japan_dev --window-days 3
+
+# Scrape one source and print parsed jobs (no database writes)
+uv run python -m scripts.inspect_source michael_page --limit 3
+```
+
+Both scripts use the same rate limits, robots checks, and normalization as the
+dashboard.
 
 ## Launch sources
 

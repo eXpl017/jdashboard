@@ -74,7 +74,7 @@ def upsert_job(session: Session, job: Job) -> tuple[Job, bool]:
         for field in MUTABLE_JOB_FIELDS:
             setattr(existing, field, getattr(job, field))
         existing.last_seen_at = utcnow()
-        existing.is_active = True
+        existing.is_active = bool(job.is_active)
         session.flush()
         return existing, False
 
