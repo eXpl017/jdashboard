@@ -21,7 +21,7 @@ permissions:
     resource: "docs/scrapers.md"
     effect: allow
   - action: edit
-    resource: "docs/tasks/**"
+    resource: "docs/research/**"
     effect: allow
   - action: shell
     resource: "pytest *"
@@ -57,11 +57,11 @@ tests.
 
 Read:
 
-- `PLAN.md`
+- `AGENTS.md`
 - `docs/scrapers.md`
 - `docs/data-model.md`
 - `docs/sources.md` (the section for your source)
-- The relevant `docs/tasks/<source>.md`
+- `docs/research/<source>.md` (the research brief)
 
 If a source brief is missing, research the source first and add a short brief to
 `docs/sources.md`.

@@ -13,7 +13,7 @@ commands in `.opencode/commands/`.
 
 ## Read before starting
 
-1. `PLAN.md` — scope and non-goals.
+1. `AGENTS.md` — project rules and conventions.
 2. `docs/scrapers.md` — the scraper contract, shared utilities, per-source notes.
 3. `docs/data-model.md` — field meanings, date semantics, fingerprints.
 4. `docs/sources.md` — existing sources and their quirks.
@@ -25,7 +25,7 @@ commands in `.opencode/commands/`.
 | Phase | Owner | Artifact |
 | --- | --- | --- |
 | 1. Research | `source-researcher` subagent | `docs/research/<source>.md` |
-| 2. Brief | main agent | `docs/sources.md` section + `docs/tasks/<NN>-source-<source>.md` |
+| 2. Brief | main agent | `docs/sources.md` section (+ the research brief) |
 | 3. Implement | `scraper-builder` subagent | `app/scrapers/<source>.py`, fixtures, parser tests |
 | 4. Integrate | `source-integrator` subagent | config flag, registry, docs, green test suite |
 | 5. Review | `qa-reviewer` subagent | findings report |
@@ -56,8 +56,9 @@ From the research artifact, write:
 - A section in `docs/sources.md`: listing URL, detail pattern, date semantics,
   language(s), visa/overseas wording, remote wording, quirks, and the health
   expectation for a normal day.
-- A task brief in `docs/tasks/<NN>-source-<source>.md` using the format of the
-  existing briefs: goal, inputs, acceptance criteria, files to touch.
+- The research brief stays in `docs/research/<source>.md`; the adopted summary
+  goes into `docs/sources.md` with the goal, inputs, acceptance criteria, and
+  the files the scraper will touch.
 - Add the source to the launch/deferred matrix in `docs/sources.md`.
 
 ## Phase 3 — Implement

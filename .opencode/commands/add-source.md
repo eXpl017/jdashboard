@@ -17,8 +17,9 @@ phases in order; do not skip a gate.
    patterns, available fields, and risks.
    - Verdict `reject` → stop and report why.
    - Verdict `defer` → report the blocker; do not write code.
-2. **Brief** — turn the research into a source brief in `docs/sources.md` and a
-   task brief in `docs/tasks/<NN>-source-<source>.md`.
+2. **Brief** — turn the research into a source brief: keep the detailed
+   evidence in `docs/research/<source>.md` and the adopted summary in
+   `docs/sources.md`.
 3. **Implement** — delegate to the `scraper-builder` subagent. It writes
    `app/scrapers/<source>.py`, the fixtures under `tests/fixtures/`, and the
    parser tests.
@@ -49,5 +50,4 @@ phases in order; do not skip a gate.
 uv run python -m scripts.inspect_source <source> --limit 3   # live scrape, no DB writes
 uv run python -m scripts.refresh --source <source> --window-days 3   # live refresh into the DB
 uv run pytest && uv run ruff check .
-docker compose exec dashboard python -m scripts.inspect_source <source> --limit 3
 ```

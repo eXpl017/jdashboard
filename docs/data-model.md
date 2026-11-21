@@ -3,8 +3,8 @@
 ## 1. Principles
 
 - One row per **source listing** in v1. The same job posted on two sources is
-  two rows, each with its own source badge. Cross-source grouping is a phase 6
-  enhancement.
+  two rows, each with its own source badge. Cross-source grouping is a deferred
+  enhancement (see `docs/agents/08-open-options.md`).
 - Store timestamps in UTC as ISO 8601 strings (`YYYY-MM-DDTHH:MM:SSZ`).
 - Store the source's raw date string too, so parsing mistakes are diagnosable.
 - Store the source URL; it is the user's path back to the original listing.

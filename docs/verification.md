@@ -7,26 +7,27 @@ copy-pasteable **from the repository root** (`/home/expl017/projects/jdashboard`
 cd /home/expl017/projects/jdashboard
 ```
 
-The root matters: `make` needs the `Makefile`, `docker compose` needs
-`docker-compose.yml`, `uv run python -m scripts...` needs the `app/` and
-`scripts/` packages on the path, and `sqlite3 data/jobs.db` uses a path
-relative to it.
+The root matters: `make` needs the `Makefile`, `uv run python -m scripts...` needs
+the `app/` and `scripts/` packages on the path, and `sqlite3 data/jobs.db` uses a
+path relative to it.
+
+The browser checks in §2 can be run by an agent with the `/verify-ui` command
+(the `ui-verification` skill), which drives a real browser against the host dev
+server at `127.0.0.1:8001`. They are also covered by the automated Playwright
+suite in `tests/browser/` (`uv run pytest -m ui -q`), which runs against a
+throwaway local server with a seeded temporary database and never scrapes live
+job sites.
 
 ## 0. Choose how to run it
 
-Two ways to run the same app. They use **different ports** and **different
-databases**, so both can run side by side.
+The dashboard runs as a local development server.
 
-| | Docker (recommended) | Host development server |
-| --- | --- | --- |
-| Start | `docker compose up -d` | `make run` |
-| URL | http://127.0.0.1:8000 | http://127.0.0.1:8001 |
-| Database | named volume `jdashboard_dashboard-data` at `/data` | `./data/jobs.db` |
-| Logs | `docker compose logs -f` | terminal output |
+| | Start | URL | Database | Logs |
+| --- | --- | --- | --- | --- |
+| Local development server | `make run` | http://127.0.0.1:8001 | `./data/jobs.db` | terminal output |
 
-**No more port conflicts:** the container publishes 8000 and the development
-server uses 8001. `make run` checks the port before starting and prints an
-actionable message if it is taken:
+**No port conflicts:** the development server uses port 8001. `make run` checks
+the port before starting and prints an actionable message if it is taken:
 
 ```bash
 make run                      # port 8001
@@ -43,12 +44,10 @@ cp .env.example .env
 
 ## 1. Quick health check
 
-Set `BASE` to whichever instance you are checking - the container publishes
-8000, the development server 8001:
+Set `BASE` to the host development server you are checking:
 
 ```bash
-BASE=http://127.0.0.1:8000   # container
-# BASE=http://127.0.0.1:8001   # development server
+BASE=http://127.0.0.1:8001
 
 curl -s $BASE/health          # {"status":"ok","version":"0.1.0"}
 curl -s -o /dev/null -w '%{http_code}\n' $BASE/              # 200 (HTML)
@@ -60,7 +59,7 @@ Interactive API docs: `$BASE/docs` (Swagger), `/redoc`, and `/openapi.json`.
 
 ## 2. What to check in the browser
 
-Open <http://127.0.0.1:8000/> (container) or <http://127.0.0.1:8001/> (dev server).
+Open <http://127.0.0.1:8001/> (development server).
 
 **Layout and chrome**
 
@@ -101,9 +100,9 @@ Open <http://127.0.0.1:8000/> (container) or <http://127.0.0.1:8001/> (dev serve
 - [ ] Loading state is visible while a filter change is in flight.
 - [ ] Keyboard only: `Tab` reaches the skip link, every filter, the refresh
       button, and each job link; `Enter` toggles a job's Details disclosure.
-- [ ] Badges: language, remote, location scope, and "Overseas eligible" /
-      "Japan residents only" appear only when known; "New" appears for newly
-      seen jobs.
+- [ ] Badges: language, remote, location scope, "Overseas eligible",
+      "Japan residents only", and "Visa support" appear only when known; "New"
+      appears for newly seen jobs.
 - [ ] Dark mode: in devtools, emulate `prefers-color-scheme: dark` → the page
       follows.
 - [ ] Narrow window (mobile width) → filters stack, cards stay readable.
@@ -111,7 +110,7 @@ Open <http://127.0.0.1:8000/> (container) or <http://127.0.0.1:8001/> (dev serve
 ## 3. API checks (expected behaviour)
 
 ```bash
-BASE=http://127.0.0.1:8000   # container (use 8001 for the dev server)
+BASE=http://127.0.0.1:8001
 
 # Defaults: role=technical, location_scope=japan, days=3
 curl -s '$BASE/api/jobs' | python3 -m json.tool | head -40
@@ -154,17 +153,13 @@ uv run python -m scripts.inspect_source michael_page --limit 3
 
 # Live refresh of one source into the local database
 uv run python -m scripts.refresh --source japan_dev --window-days 3
-
-# Inside the container
-sg docker -c "docker compose exec -T dashboard python -m scripts.inspect_source michael_page --limit 3"
 ```
 
 Expect JSON log lines plus a final JSON summary with per-source counts.
 
 ## 5. Database checks (SQLite)
 
-Host database: `./data/jobs.db`. Container database: the `dashboard-data`
-volume, readable with `docker compose exec`.
+Host database: `./data/jobs.db`.
 
 ```bash
 sqlite3 data/jobs.db ".tables"
@@ -182,9 +177,6 @@ sqlite3 data/jobs.db "SELECT COUNT(*) FROM jobs WHERE is_active = 0;"
 # Recent runs and per-source results
 sqlite3 data/jobs.db "SELECT id, status, window_days, total_found, total_new, total_errors FROM scrape_runs ORDER BY id DESC LIMIT 5;"
 sqlite3 data/jobs.db "SELECT source, status, found, new, skipped, errors FROM scrape_source_results ORDER BY id DESC LIMIT 10;"
-
-# In the container
-sg docker -c "docker compose exec -T dashboard python -c \"import sqlite3; print(sqlite3.connect('/data/jobs.db').execute('select count(*) from jobs').fetchone())\""
 ```
 
 Expected: the duplicate-fingerprint query returns no rows.
@@ -192,34 +184,25 @@ Expected: the duplicate-fingerprint query returns no rows.
 ## 6. Tests and lint
 
 ```bash
-uv run pytest -q          # 124 tests, no network access required
+uv run pytest -q          # default offline suite (network-free; UI browser tests excluded)
+uv run pytest -m ui -q    # automated browser UI tests (Playwright, throwaway local server)
 uv run ruff check .
 uv run ruff format --check .
 ```
 
-The suite must pass with the machine offline; that is what proves the tests do
-not hit the live network.
-
-## 7. Docker checks
+First-time browser test setup:
 
 ```bash
-sg docker -c "docker compose build"                 # build
-sg docker -c "docker compose up -d"                 # start
-sg docker -c "docker compose ps"                    # STATUS must say (healthy)
-sg docker -c "docker compose logs --tail 20"        # JSON log lines
-sg docker -c "docker compose down"                  # stop, keep the volume
-sg docker -c "docker compose down -v"               # stop and delete the volume
+uv sync --extra dev
+uv run playwright install chromium
 ```
 
-- [ ] Container reports **healthy** (the healthcheck polls `GET /health`).
-- [ ] Logs are single-line JSON: `{"ts": ..., "level": ..., "logger": ...}`.
-- [ ] Data survives `down` → `up` (volume `jdashboard_dashboard-data`).
-- [ ] The image contains no `.env` and no local data:
-      `sg docker -c "docker run --rm --entrypoint ls japan-cybersecurity-jobs:latest -a /app"`.
-- [ ] The process runs as a non-root user:
-      `sg docker -c "docker compose exec -T dashboard id"`.
+The default suite must pass with the machine offline; that is what proves the
+tests do not hit the live network. The browser UI suite is marked `ui`, starts a
+seeded temporary server on a free local port, and must not scrape live job
+sites.
 
-## 8. Compliance spot-checks
+## 7. Compliance spot-checks
 
 - [ ] User-Agent is set in `.env` (`USER_AGENT=…`) and used for every request.
 - [ ] robots.txt is honoured at runtime: a disallowed path makes the source
@@ -231,13 +214,11 @@ sg docker -c "docker compose down -v"               # stop and delete the volume
       (only harmless matches in `app/services/normalize.py` and the docs).
 - [ ] `.env` and `data/` are gitignored: `git check-ignore -v .env data/jobs.db`.
 
-## 9. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Check | Fix |
 | --- | --- | --- |
 | "Address already in use" | `uv run python scripts/check_port.py <port>` | stop the other process, or `make run DEV_PORT=<other>` |
 | Empty list, no errors | `curl .../api/refresh/status` | widen the Window filter, or press Refresh |
-| A source shows `error` | `docker compose logs dashboard` | read the message; if it is a 403/anti-bot, disable the source rather than working around it |
-| Container unhealthy | `docker compose logs dashboard` | config or database problem, not a network one |
 | Refresh button stuck disabled | `curl .../api/refresh/status` | a run is still active; restart the app to clear the in-memory lock |
 | `pytest` fails after a source change | `uv run pytest -q` | a fixture or parser expectation needs updating |

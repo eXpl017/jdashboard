@@ -1,7 +1,6 @@
 # Operations Guide
 
-This is the runbook for the planned application. Commands become runnable after
-the implementation phases are complete.
+This is the runbook for the application.
 
 ## 1. Prerequisites
 
@@ -41,8 +40,8 @@ make run
 Open <http://127.0.0.1:8001>.
 
 `make run` starts the development server on **port 8001** and checks the port
-first, so it never collides with the container, which publishes **port 8000**.
-Override the dev port with `make run DEV_PORT=8002`.
+first, so it never collides with another process. Override the dev port with
+`make run DEV_PORT=8002`.
 
 The app binds to `127.0.0.1` by default. Do not expose it to the internet
 without authentication.
@@ -74,87 +73,53 @@ uv run python -m scripts.refresh --source japan_dev --window-days 3
 
 The CLI uses the same rate limits, robots checks, and normalization as the UI.
 
-## 6. Docker
-
-The image is defined in `Dockerfile`; `docker-compose.yml` builds and runs it.
+## 6. Tests and lint
 
 ```bash
-# Build the image
-docker compose build
-
-# Start in the background
-docker compose up -d
-
-# Status and logs
-docker compose ps
-docker compose logs -f dashboard
-
-# Stop, keep the database volume
-docker compose down
-
-# Stop and delete the database volume too
-docker compose down -v
-```
-
-Image details:
-
-- Base: `python:3.13-slim` with `uv` used only to install locked runtime
-  dependencies (`uv sync --frozen --no-dev --no-install-project`).
-- Runs as the unprivileged user `appuser` (uid 10001).
-- Listens on `0.0.0.0:8000` inside the container; Compose publishes it on
-  `127.0.0.1:8000` by default (the host dev server uses 8001, so both can run
-  at the same time).
-- Health check hits `GET /health` every 30 s.
-- The SQLite database lives in the `dashboard-data` volume at `/data`.
-
-Useful in-container commands:
-
-```bash
-# Refresh from the CLI
-docker compose exec dashboard python -m scripts.refresh --window-days 3
-
-# Inspect one source
-docker compose exec dashboard python -m scripts.inspect_source michael_page --limit 3
-
-# Read the database
-docker compose exec dashboard python -c \
-  "import sqlite3; print(sqlite3.connect('/data/jobs.db').execute('select count(*) from jobs').fetchone())"
-
-# Copy the database out
-docker compose cp dashboard:/data/jobs.db ./jobs.db
-```
-
-Configuration comes from the environment; Compose reads the project `.env` file
-for `${VAR:-default}` substitution. Useful keys:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DASHBOARD_BIND` | `127.0.0.1` | Host interface to publish on |
-| `DASHBOARD_PORT` | `8000` | Host port |
-| `LOG_LEVEL` | `INFO` | Log level inside the container |
-| `DATABASE_URL` | `sqlite:////data/jobs.db` | Keep the `/data` path in sync with the volume |
-| `ENABLE_*` | `true` | Per-source switches |
-
-Troubleshooting:
-
-- `docker compose up` fails with a port conflict: change `DASHBOARD_PORT`.
-- The container is unhealthy: `docker compose logs dashboard` and check
-  `GET /health`; the app never scrapes on startup, so a failure here is a
-  config or database problem, not a network one.
-- After changing `pyproject.toml` or `uv.lock`, rebuild:
-  `docker compose build --no-cache && docker compose up -d`.
-
-## 7. Tests and lint
-
-```bash
-uv run pytest
+uv sync --extra dev
+uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 ```
 
-Tests must not hit the live network. Use fixtures and `respx`.
+`uv run pytest -q` runs the default offline suite (network-free) and excludes
+browser UI tests. Use fixtures and `respx`; tests must not hit the live network.
 
-## 8. Database
+### Automated browser UI tests (Playwright)
+
+The `tests/browser/` suite exercises the dashboard UI in a real browser against a
+throwaway local server with a seeded temporary SQLite database. It is separate
+from the default offline suite and does not scrape live job sites.
+
+```bash
+uv sync --extra dev
+uv run playwright install chromium
+uv run pytest -m ui -q
+```
+
+Notes:
+
+- Browser tests are marked `ui` and are excluded from `uv run pytest -q` by
+  default.
+- The suite starts its own `uvicorn` instance on a free local port; it does not
+  require `make run` or an existing database.
+- `/api/refresh` is never used to scrape live sources in these tests.
+
+### Browser verification (agent-driven)
+
+The browser checklist in `docs/verification.md` §2 can also be run by an agent
+in a real browser against the host dev server:
+
+```bash
+make run          # 127.0.0.1:8001
+/verify-ui        # in the OpenCode TUI; runs the ui-verification skill
+```
+
+This is separate from `uv run pytest`/`pytest -m ui` and is not part of CI. It
+talks only to `127.0.0.1:8001`; it never scrapes job sites unless you explicitly
+run a live refresh.
+
+## 7. Database
 
 Default path: `data/jobs.db`.
 
@@ -185,11 +150,11 @@ rm data/jobs.db
 # restart the app; the schema is recreated
 ```
 
-## 9. Logs
+## 8. Logs
 
 - Console output from Uvicorn and the app, emitted as single-line JSON objects
   (`ts`, `level`, `logger`, `message`, plus `exc` when a traceback is attached).
-- Optional rotating file: `data/logs/app.log`.
+- No file log is configured; use the console.
 - Log level via `LOG_LEVEL` in `.env`.
 
 What is logged:
@@ -205,7 +170,7 @@ What is not logged:
 - Full HTML pages.
 - Personal data from listings beyond what is needed for debugging.
 
-## 10. Troubleshooting
+## 9. Troubleshooting
 
 ### The dashboard shows no jobs
 
@@ -248,7 +213,7 @@ What is not logged:
 - Ensure the database and terminal use UTF-8.
 - Check `normalize_width` does not strip meaningful characters.
 
-## 11. robots.txt and terms policy
+## 10. robots.txt and terms policy
 
 Before enabling a source:
 
@@ -263,7 +228,7 @@ Before enabling a source:
 The app should check robots at runtime and skip a disallowed path with a clear
 error. A manual review is still required when adding a source.
 
-## 12. Adding a new source
+## 11. Adding a new source
 
 The fastest route is the `/add-source <source>` command in the TUI, which runs
 the `source-onboarding` skill end to end. `/research-source <source>` stops
@@ -280,7 +245,8 @@ The workflow is split across four subagents so each phase stays focused:
 
 Manual steps, if you do not want to use the agents:
 
-1. Research the source and write a brief in `docs/sources.md`.
+1. Research the source: write the evidence in `docs/research/<source>.md` and
+   the adopted summary in `docs/sources.md`.
 2. Add a source ID and enable flag to `.env.example` and `config.py`.
 3. Save listing/detail fixtures under `tests/fixtures/`.
 4. Implement `app/scrapers/<source>.py`.
@@ -294,19 +260,17 @@ Manual steps, if you do not want to use the agents:
 Use the `scraper-authoring` skill and the `scraper-builder` subagent for this
 workflow.
 
-## 13. Security notes
+## 12. Security notes
 
 - The dashboard has no login. Keep it on `127.0.0.1`.
 - If you expose it to a LAN, use a reverse proxy with authentication and TLS.
-- The container image runs as an unprivileged user (`appuser`) and only writes
-  to the `/data` volume.
 - Do not commit `.env` or `data/`.
 - Do not add job-site credentials or cookies unless you explicitly decide to
   support an authenticated source. If you do, store them in `.env` and never in
   the database or logs.
 - Keep dependencies updated and run `ruff`/`pytest` before committing.
 
-## 14. Deployment options
+## 13. Deployment options
 
 ### Local (v1)
 
@@ -321,14 +285,3 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Add a reverse proxy (Caddy/Nginx) with basic auth or an SSO layer first.
-
-### Docker (recommended for a long-running instance)
-
-```bash
-docker compose build
-docker compose up -d
-```
-
-See [section 6](#6-docker) for the full runbook, backups, and configuration
-keys. The container serves the app only; there is no scheduler and no startup
-scrape.

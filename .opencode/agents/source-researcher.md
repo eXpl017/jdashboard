@@ -14,9 +14,6 @@ permissions:
   - action: edit
     resource: "docs/sources.md"
     effect: allow
-  - action: edit
-    resource: "docs/tasks/**"
-    effect: allow
   - action: webfetch
     resource: "*"
     effect: allow

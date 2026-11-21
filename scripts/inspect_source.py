@@ -38,7 +38,6 @@ def _job_payload(scraper: BaseScraper, job) -> dict[str, object]:
         "role_category": job.role_category,
         "language": job.language,
         "location_scope": job.location_scope,
-        "security_score": job.security_score,
         "security_tags": job.security_tags,
         "source_is_security_category": scraper.is_security_category,
     }

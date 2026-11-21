@@ -16,14 +16,13 @@ const DEFAULT_STATE = {
 };
 
 const state = { ...DEFAULT_STATE };
-const sources = [];
+let sources = [];
 const sourceNames = new Map();
 let tags = [];
 let roles = [];
 let refreshRunning = false;
 let refreshPollTimer = null;
 let jobsAbort = null;
-let refreshLoadToken = 0;
 
 const $ = (id) => document.getElementById(id);
 
@@ -473,12 +472,12 @@ function buildBadges(job) {
   if (remote) result.push(["badge--neutral", remote]);
   const scope = locationScopeLabel(job.location_scope);
   if (scope) result.push(["badge--neutral", scope]);
-  if (job.overseas_eligible != null || job.visa_sponsorship) {
-    result.push(
-      job.overseas_eligible === 1
-        ? ["badge--ok", "Overseas eligible"]
-        : ["badge--warn", "Japan residents only"],
-    );
+  if (job.overseas_eligible === 1) {
+    result.push(["badge--ok", "Overseas eligible"]);
+  } else if (job.overseas_eligible === 0) {
+    result.push(["badge--warn", "Japan residents only"]);
+  } else if (job.visa_sponsorship) {
+    result.push(["badge--neutral", "Visa support"]);
   }
   for (const tag of job.security_tags || []) {
     if (tag) result.push(["badge--neutral", tag]);
@@ -634,6 +633,17 @@ function init() {
       include_active: false,
     };
     Object.assign(state, defaults);
+    for (const [key, value] of Object.entries(defaults)) {
+      const el = document.getElementById(
+        `filter-${key === "include_active" ? "include-active" : key.replaceAll("_", "-")}`
+      );
+      if (!el) continue;
+      if (el.type === "checkbox") {
+        el.checked = Boolean(value);
+      } else {
+        el.value = String(value ?? "");
+      }
+    }
     writeStateFromInputs();
     void Promise.all([loadJobs(), loadStats()]);
   });

@@ -13,8 +13,8 @@ Each file should answer:
 - Is a login, headless browser, or special auth required?
 - What are the risks and the verdict (implement / defer / reject)?
 
-After a source is adopted, add a short summary to `docs/sources.md` and create a
-task brief in `docs/tasks/`.
+After a source is adopted, add a short summary to `docs/sources.md` and keep the
+detailed evidence in this folder.
 
 Current launch sources are documented directly in `docs/sources.md`; this folder
 is for future candidates.

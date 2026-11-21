@@ -38,5 +38,5 @@ def test_check_port_exits_one_and_explains_when_busy(capsys) -> None:
 
     err = capsys.readouterr().err
     assert f"Port {port}" in err
-    assert "docker compose down" in err
+    assert "If another local process is using that port" in err
     assert "make run DEV_PORT=" in err

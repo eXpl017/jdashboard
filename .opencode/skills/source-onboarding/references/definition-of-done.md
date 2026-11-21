@@ -23,8 +23,8 @@ Close each phase only when every box is ticked.
 
 - [ ] `docs/sources.md` section written with URLs, date semantics, language(s),
       visa/overseas wording, remote wording, quirks, health expectation.
-- [ ] `docs/tasks/<NN>-source-<source>.md` written with goal, inputs,
-      acceptance criteria, files to touch.
+- [ ] `docs/research/<source>.md` holds the evidence and `docs/sources.md`
+      holds the adopted summary (goal, inputs, acceptance criteria, files).
 - [ ] Source matrix updated.
 
 ## Implementation

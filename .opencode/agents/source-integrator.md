@@ -57,10 +57,10 @@ it, and to prove it works live.
 
 ## Read first
 
-- `PLAN.md`
+- `AGENTS.md`
 - `docs/scrapers.md` (contract and per-source sections)
 - `docs/sources.md` (the brief for this source)
-- `docs/tasks/<NN>-source-<source>.md` (the task brief)
+- `docs/research/<source>.md` (the research brief)
 - `app/scrapers/registry.py`, `app/config.py`
 - The new `app/scrapers/<source>.py` and its tests
 
@@ -85,10 +85,6 @@ it, and to prove it works live.
    - `uv run python -m scripts.inspect_source <source> --limit 3`
    - Confirm titles, companies, posted dates, and URLs look right.
    - Confirm the smoke did not write to the database.
-6. **Optional container smoke** (only when Docker is available and the user
-   asked for it)
-   - `docker compose build && docker compose up -d`
-   - `docker compose exec dashboard python -m scripts.inspect_source <source> --limit 3`
 
 ## Hard rules
 
@@ -111,7 +107,6 @@ Wiring: config=<yes/no> registry=<yes/no> docs=<files>
 Tests: <command and result>
 Live smoke test: <found/skipped> — <sample jobs or failure>
 Database writes during smoke: none
-Container smoke: <result or skipped>
 Open risks: ...
 ```
 

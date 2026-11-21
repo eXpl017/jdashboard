@@ -73,10 +73,7 @@ def main(argv: list[str] | None = None) -> int:
 
     configure_logging()
 
-    async def _execute() -> dict[str, object]:
-        return await run_refresh(args.window_days, args.source)
-
-    result = asyncio.run(_execute())
+    result = asyncio.run(run_refresh(args.window_days, args.source))
     print(json.dumps(result, default=str, ensure_ascii=False))
     final_status = str(result.get("status") or "failed")
     return 0 if final_status != "failed" else 1

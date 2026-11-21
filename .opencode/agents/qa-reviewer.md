@@ -31,7 +31,7 @@ You must not edit files. Review the current changes and report findings.
 
 ## Read
 
-- `PLAN.md`
+- `AGENTS.md`
 - `docs/architecture.md`
 - `docs/data-model.md`
 - `docs/ui.md`

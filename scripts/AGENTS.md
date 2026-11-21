@@ -35,8 +35,8 @@ uv run python -m scripts.inspect_source michael_page --limit 3
 uv run python scripts/check_port.py 8001
 ```
 
-In the container:
+On the host:
 
 ```bash
-sg docker -c "docker compose exec -T dashboard python -m scripts.refresh --source japan_dev --window-days 3"
+uv run python -m scripts.refresh --source japan_dev --window-days 3
 ```

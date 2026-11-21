@@ -10,7 +10,7 @@ before committing or handing work back.
 
 ## Read before reviewing
 
-1. `PLAN.md` — acceptance criteria.
+1. `AGENTS.md` — project rules and conventions.
 2. `docs/architecture.md` — refresh flow and error handling.
 3. `docs/data-model.md` — upsert and date semantics.
 4. `docs/ui.md` — API and UI expectations.

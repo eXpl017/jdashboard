@@ -24,7 +24,7 @@
 │                                                              │
 │  Services                                                    │
 │   RefreshService  (asyncio.Lock + background task)           │
-│   JobQueryService (filters, sorting, pagination)             │
+│   Repository query layer (filters, sorting, pagination)      │
 │   Normalizer      (dates, salary, location, remote, type,    │
 │                    language, location scope, overseas)       │
 │   Classifier      (security relevance, tags, role category)  │
@@ -41,20 +41,22 @@
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## 2. Planned project layout
+## 2. Project layout
 
 ```text
 jdashboard/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI app factory, lifespan, routes include
+│   ├── main.py                 # FastAPI app, lifespan, static mount, "/" route
 │   ├── config.py               # pydantic-settings; .env loading
 │   ├── db.py                   # engine, session factory, PRAGMAs
 │   ├── models.py               # SQLAlchemy models
 │   ├── schemas.py              # Pydantic request/response models
 │   ├── repository.py           # job upserts, queries, run records
+│   ├── logging_config.py       # JSON log formatter (app + CLI)
 │   ├── api/
 │   │   ├── __init__.py
+│   │   ├── health.py
 │   │   ├── jobs.py
 │   │   ├── refresh.py
 │   │   ├── sources.py
@@ -65,7 +67,8 @@ jdashboard/
 │   │   ├── normalize.py        # text/date/salary/location/language/scope normalization
 │   │   ├── classify.py         # security keywords, tags, score, role category
 │   │   ├── dates.py            # parsing and timezone helpers
-│   │   └── http.py             # httpx wrapper, robots, retry, rate limit
+│   │   ├── http.py             # httpx wrapper, robots, retry, rate limit
+│   │   └── jsonld.py           # schema.org JobPosting extraction
 │   ├── scrapers/
 │   │   ├── __init__.py
 │   │   ├── base.py             # BaseScraper, ScrapedJob, ScrapeResult
@@ -82,49 +85,42 @@ jdashboard/
 │       ├── app.css
 │       └── app.js
 ├── data/
-│   ├── jobs.db                 # gitignored
-│   └── logs/                   # gitignored
+│   └── jobs.db                 # gitignored
 ├── tests/
-│   ├── fixtures/
-│   │   ├── michael_page_list.html
-│   │   ├── michael_page_detail.html
-│   │   ├── japan_dev_list.html
-│   │   ├── japan_dev_detail.html
-│   │   ├── tokyo_dev_list.html
-│   │   ├── tokyo_dev_detail.html
-│   │   ├── daijob_list.html
-│   │   ├── daijob_detail.html
-│   │   ├── robert_half_list.html
-│   │   └── robert_half_detail.html
-│   ├── conftest.py
-│   ├── test_dates.py
-│   ├── test_normalize.py
-│   ├── test_classify.py
-│   ├── test_repository.py
-│   ├── test_api.py
-│   └── test_scrapers.py
+│   ├── fixtures/               # committed HTML/JSON samples per source
+│   ├── conftest.py             # in-memory DB session, TestClient, make_job
+│   └── test_<area>.py          # api, repository, refresh, http, ui, per-source, ...
 ├── scripts/
-│   ├── refresh.py              # developer CLI refresh
-│   └── inspect_source.py       # dump parsed jobs for one source
+│   ├── __init__.py
+│   ├── refresh.py              # developer CLI refresh (writes the DB)
+│   ├── inspect_source.py       # dump parsed jobs for one source (no DB writes)
+│   └── check_port.py           # pre-flight check that a port is free
 ├── docs/
-├── .opencode/
+│   ├── agents/                 # how the project was built, phase by phase
+│   ├── research/               # briefs for candidate sources
+│   └── *.md                    # topic documentation (see docs/README.md)
+├── .opencode/                  # agents, skills, and commands for AI-assisted work
+├── opencode.json
 ├── .env.example
 ├── .gitignore
 ├── pyproject.toml
+├── uv.lock
 ├── Makefile
 ├── README.md
-└── PLAN.md
+└── AGENTS.md
 ```
 
 ## 3. Application lifecycle
 
-- `create_app()` builds the FastAPI app, mounts static files, includes routers,
-  and creates the SQLite schema if it does not exist.
+- `app/main.py` builds the FastAPI app at import time, mounts static files,
+  includes the API routers, and serves the dashboard page at `/`. The lifespan
+  creates the SQLite schema if it does not exist and installs the JSON log
+  formatter.
 - The database file defaults to `data/jobs.db`.
-- On startup, **no scraping occurs**. The app only opens the database and
-  prepares the refresh lock.
-- On shutdown, the app waits briefly for an in-flight refresh, then closes the
-  HTTP client.
+- On startup, **no scraping occurs**. The app opens the database, creates the
+  schema if needed, and installs the JSON log formatter. The refresh service is
+  created lazily on the first refresh request.
+- On shutdown, the app closes the shared HTTP client.
 
 ## 4. Refresh flow
 
@@ -167,7 +163,7 @@ UI poll sees finished -> reload /api/jobs and /api/stats
 
 ### Why a background task?
 
-A refresh with 5 sources and detail pages can take 20–60 seconds. A synchronous
+A refresh with 5 sources and detail pages takes roughly two minutes. A synchronous
 HTTP request risks browser/server timeouts and gives no progress feedback.
 The background task keeps the request fast while the UI polls for status.
 
@@ -186,9 +182,10 @@ In-memory state is sufficient for a single-user local app:
 @dataclass
 class RefreshProgress:
     run_id: int
-    status: str                  # running | success | partial | failed
     started_at: datetime
+    status: str                  # running | success | partial | failed
     finished_at: datetime | None
+    current_source: str | None
     sources: dict[str, SourceProgress]
 ```
 
@@ -207,8 +204,8 @@ On restart, the UI shows the last completed run from the database.
 - Per-host rate limit: at least 1 second between requests by default.
 - Per-source concurrency limit: 2–3 concurrent detail requests.
 - `robots.txt` check per host, cached for the process lifetime.
-- If `robots.txt` disallows the path: raise `RobotsDisallowed` and record a
-  source error. Do not attempt to bypass.
+- If `robots.txt` disallows the path: raise `RobotsDisallowed` and record the
+  source as `skipped`. Do not attempt to bypass.
 - Optional `ETag`/`Last-Modified` cache later; not required for v1.
 
 ## 6. Error handling
@@ -241,11 +238,11 @@ DATABASE_URL=sqlite:///./data/jobs.db
 HOST=127.0.0.1
 PORT=8000
 DEFAULT_WINDOW_DAYS=3
-DEFAULT_ROLE_SCOPE=technical
-DEFAULT_LOCATION_SCOPE=japan
 REQUEST_TIMEOUT_SECONDS=20
 MIN_REQUEST_INTERVAL_SECONDS=1.0
 MAX_DETAIL_CONCURRENCY=2
+MAX_RETRIES=2
+RETRY_BACKOFF_SECONDS=1.0
 USER_AGENT=JDashboard/0.1 (personal job dashboard; +http://127.0.0.1:8000)
 LOG_LEVEL=INFO
 ```
@@ -273,7 +270,7 @@ Do not commit `.env`. Commit `.env.example` only.
   short error message.
 - Store job descriptions as text/HTML from public pages; do not store recruiter
   contact details unless they are part of the public listing and needed.
-- Keep `data/jobs.db` and `data/logs/` out of git.
+- Keep `data/` out of git.
 
 ## 9. Testing strategy
 
@@ -290,8 +287,8 @@ Do not commit `.env`. Commit `.env.example` only.
 
 ## 10. Observability
 
-- Console logs with timestamp, level, source, and message.
-- Rotating file log at `data/logs/app.log` (optional in v1; console is enough).
-- `GET /health` returns app and database status.
+- Console logs as single-line JSON with `ts`, `level`, `logger`, `message`, and
+  `exc` when a traceback is attached.
+- `GET /health` returns the app version; it does not probe the database.
 - `GET /api/stats` returns per-source counts and last run status.
 - The UI's source panel is the primary operational view.

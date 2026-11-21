@@ -341,11 +341,11 @@ def get_source_health(session: Session) -> dict[str, dict[str, Any]]:
             last_success[row.source] = row.finished_at or row.started_at
     return {
         source: {
-            "last_status": latest.get(source).status if source in latest else "never",
+            "last_status": row.status,
             "last_success_at": last_success.get(source),
-            "last_error": latest.get(source).error_message if source in latest else None,
+            "last_error": row.error_message,
         }
-        for source in set(latest) | set(last_success)
+        for source, row in latest.items()
     }
 
 

@@ -15,11 +15,11 @@ to an existing scraper.
 
 ## Read before editing
 
-1. `PLAN.md` — scope and acceptance criteria.
+1. `AGENTS.md` — project rules and conventions.
 2. `docs/sources.md` — the source brief and robots notes.
 3. `docs/scrapers.md` — the scraper contract and per-source strategy.
 4. `docs/data-model.md` — field meanings and normalization rules.
-5. `docs/tasks/` — the task brief for the source, if one exists.
+5. `docs/research/<source>.md` — the research brief for the source, if it exists.
 
 ## Non-negotiable rules
 

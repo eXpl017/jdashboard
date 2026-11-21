@@ -42,12 +42,11 @@
 ### Header
 
 - Title: `Japan Cybersecurity Jobs`
-- Subtitle: `Public listings from 5 sources`
+- Subtitle: `Public listings from Michael Page, JapanDev, TokyoDev, Daijob and Robert Half`
 - Last refresh: relative time (`2 minutes ago`) plus absolute tooltip.
 - Refresh button:
   - Enabled when idle.
   - Disabled and shows `Refreshing…` while running.
-  - Shows a spinner or subtle animation.
 
 ### Summary cards
 
@@ -74,7 +73,7 @@
 - **Visa / overseas**: `Any`, `Overseas eligible`, `Visa sponsorship`,
   `Overseas eligible or visa sponsorship`. These filter on
   `overseas_eligible = 1` and `visa_sponsorship IS NOT NULL`.
-- Tag: dropdown populated from `/api/sources` or `/api/stats`.
+- Tag: dropdown populated from `/api/stats` (`by_tag`).
 - Window: `3 days` (default), `7 days`, `30 days`, `All active`.
 - Sort: `Newest`, `Oldest`, `Company A–Z`, `Relevance`.
 - "Include active older listings" toggle, shown when window is 3/7/30 days.
@@ -96,8 +95,10 @@ Each row:
 - Salary text (if available).
 - Source badge.
 - Language badge: `EN`, `JA`, or `EN/JA`.
-- Visa/overseas badges when known: `Visa support`, `Overseas OK`,
-  `Japan residents only`. Unknown stays unlabelled rather than showing "No".
+- Visa/overseas badges when known: `Overseas eligible` when
+  `overseas_eligible = 1`, `Japan residents only` when it is `0`, and
+  `Visa support` when overseas eligibility is unknown but the source states
+  sponsorship. Otherwise unlabelled.
 - Posted date (`2 days ago`, with exact date tooltip).
 - Tags.
 - Expandable description:
@@ -108,7 +109,6 @@ Each row:
 Visual states:
 
 - New badge if `first_seen_at` is within the selected window.
-- `date_confidence=low` shows a subtle `date estimated` note.
 - Expired/inactive rows are hidden by default; if shown, muted.
 
 ### Refresh status panel
@@ -209,8 +209,8 @@ Response:
 ### `GET /api/jobs/{id}`
 
 Returns the full job, including `description_text`, `description_html`,
-`posted_at_raw`, `source_updated_at`, `expires_at`, and `raw_json` (optional,
-behind a debug flag).
+`posted_at_raw`, `source_updated_at`, and `expires_at`. `raw_json` is stored
+for debugging but is not exposed by the API.
 
 ### `GET /api/stats`
 
@@ -234,14 +234,23 @@ behind a debug flag).
     "management": 1,
     "other": 0
   },
+  "by_tag": {
+    "soc": 5,
+    "cloud-security": 3
+  },
   "relocation_friendly": 6,
   "last_run": {
     "id": 7,
     "status": "success",
     "started_at": "2026-11-11T09:00:00Z",
     "finished_at": "2026-11-11T09:00:45Z",
+    "trigger": "manual",
+    "window_days": 3,
+    "total_found": 42,
     "total_new": 8,
-    "total_errors": 0
+    "total_updated": 0,
+    "total_errors": 0,
+    "error_summary": null
   }
 }
 ```
@@ -253,7 +262,7 @@ behind a debug flag).
   "sources": [
     {
       "id": "michael_page",
-      "name": "Michael Page",
+      "name": "Michael Page Japan",
       "url": "https://www.michaelpage.co.jp/en/jobs/it-security",
       "enabled": true,
       "last_success_at": "2026-11-11T09:00:40Z",
@@ -301,7 +310,7 @@ behind a debug flag).
 ### `GET /health`
 
 ```json
-{ "status": "ok", "database": "ok", "version": "0.1.0" }
+{ "status": "ok", "version": "0.1.0" }
 ```
 
 ## 6. Client behavior

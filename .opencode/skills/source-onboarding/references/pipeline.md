@@ -33,14 +33,14 @@ subagent prompt.
 
 1. Write the `docs/sources.md` section: URLs, date semantics, language(s),
    visa/overseas wording, remote wording, quirks, health expectation.
-2. Write `docs/tasks/<NN>-source-<source>.md`:
+2. Expand `docs/research/<source>.md` with:
    - Goal
    - Inputs (listing/detail URLs, robots finding)
    - Acceptance criteria
    - Files to create or touch
-3. Add a row to the source matrix in `docs/sources.md`.
+3. Add the adopted summary and a row to the source matrix in `docs/sources.md`.
 
-**Artifact:** the two documents above.
+**Artifact:** the research brief and the `docs/sources.md` summary.
 
 **Gate:** the brief names every field the scraper is expected to fill and the
 date semantics it must use.
@@ -73,9 +73,6 @@ date semantics it must use.
    `README.md` list.
 4. Run `uv run ruff check .` and `uv run pytest`.
 5. Live smoke: `uv run python -m scripts.inspect_source <source> --limit 3`.
-6. Optional container smoke when Docker is available:
-   `docker compose build && docker compose up -d` then
-   `docker compose exec dashboard python -m scripts.inspect_source <source> --limit 3`.
 
 **Artifact:** wired source, green suite, smoke output.
 
@@ -111,11 +108,6 @@ uv run python -m scripts.refresh --source <source> --window-days 3
 # Suite and lint
 uv run pytest
 uv run ruff check .
-
-# Container equivalents
-docker compose build && docker compose up -d
-docker compose exec dashboard python -m scripts.inspect_source <source> --limit 3
-docker compose exec dashboard python -m scripts.refresh --source <source> --window-days 3
 ```
 
 ## When a phase fails

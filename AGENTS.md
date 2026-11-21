@@ -10,12 +10,14 @@ the per-directory `AGENTS.md` files for directory-specific rules.
 
 ## Status
 
-Phases 0–5 are complete: scaffold, database and query API, scraper framework,
-refresh service, five source scrapers, the web UI, hardening, and Docker.
-Phase 6 (optional extras: cross-source dedup, export, more sources) is open.
+The build is complete: scaffold, database and query API, scraper framework,
+refresh service, five source scrapers, the web UI, hardening, and the agent
+workflow for adding sources.
 
 - 128 tests pass, `ruff check .` is clean.
 - Sources: Michael Page Japan, JapanDev, TokyoDev, Daijob, Robert Half Japan.
+- What was built and why: `docs/agents/`. What is deliberately not built:
+  `docs/agents/08-open-options.md`.
 
 ## Layout
 
@@ -54,21 +56,14 @@ Run everything from the repository root.
 uv sync --extra dev                 # install
 make run                            # dev server on 127.0.0.1:8001 (host DB)
 make run DEV_PORT=8002              # another dev port
-uv run pytest -q                    # 128 tests, no network
+uv run pytest -q                    # default offline suite (no network; UI tests excluded)
+uv run pytest -m ui -q              # automated browser UI tests (Playwright)
+uv run playwright install chromium  # one-time browser install for UI tests
 uv run ruff check .                 # lint
 uv run python -m scripts.inspect_source <source> --limit 3   # live scrape, no DB writes
 uv run python -m scripts.refresh --source <source> --window-days 3   # live refresh, writes DB
 uv run python scripts/check_port.py 8001   # pre-flight port check
-
-sg docker -c "docker compose up -d"        # container on 127.0.0.1:8000 (volume DB)
-sg docker -c "docker compose ps"           # expect (healthy)
-sg docker -c "docker compose logs -f"
-sg docker -c "docker compose down"         # stop; keeps the volume
 ```
-
-`make run` and the container use **different ports (8001 vs 8000) and different
-databases** (`./data/jobs.db` vs the `dashboard-data` volume), so both can run
-at once.
 
 ## Architecture in one paragraph
 
@@ -118,6 +113,7 @@ JSON; `templates/` + `static/` render it.
 | Evaluate a candidate source | `/research-source <source>` → brief in `docs/research/<source>.md` |
 | Repair a scraper | `scraper-authoring` skill; fixtures in `tests/fixtures/` |
 | Review a change | `dashboard-qa` skill; `qa-reviewer` subagent |
+| Verify the UI in a browser | `/verify-ui` → `ui-verification` skill (host dev server, `127.0.0.1:8001`) |
 | Verify a change end to end | `docs/verification.md` |
 | Change the UI or API | `docs/ui.md`; the UI is `app/templates/` + `app/static/` |
 
@@ -129,7 +125,4 @@ JSON; `templates/` + `static/` render it.
   datetimes break the scrapers' comparisons.
 - `job_tags` exists in the schema but is not written; tags live in
   `jobs.security_tags` as JSON text.
-- The container image has no dev dependencies: run tests on the host.
-- Docker access in an old shell may need `sg docker -c "docker ..."` until you
-  log in again.
 - `data/` and `.env` are gitignored — never commit them.

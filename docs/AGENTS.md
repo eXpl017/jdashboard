@@ -15,10 +15,8 @@ explains how to keep the docs honest.
 | `ui.md` | you change the UI or the HTTP API |
 | `operations.md` | you run, troubleshoot, back up, or deploy the app |
 | `verification.md` | you are checking that a change works (playbook) |
-| `roadmap.md` | you want the phase status and what is still open |
 | `decisions.md` | you need the "why" behind an architectural choice (ADRs) |
-| `questions.md` | historical planning questions and their resolutions |
-| `tasks/` | per-phase task briefs written for an AI implementer |
+| `agents/` | how the project was built, phase by phase, and what is still open |
 | `research/` | briefs for candidate sources that were evaluated |
 
 ## Rules
@@ -34,8 +32,7 @@ explains how to keep the docs honest.
   error", "a full refresh takes ~2 minutes because of the 1 req/s throttle").
 - Do not paste full HTML pages or personal data into docs; reference the
   fixture files instead.
-- Plans and ADRs are append-only: add a new ADR rather than rewriting an old
-  one, and mark a plan section as historical instead of deleting it.
+- ADRs are append-only: add a new ADR rather than rewriting an old one.
 
 ## Related
 

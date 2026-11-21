@@ -26,8 +26,7 @@ def port_is_free(port: int, host: str = "127.0.0.1") -> bool:
 
 def _hints(port: int, host: str) -> list[str]:
     return [
-        "If the dashboard container is running, stop it: docker compose down",
-        "Or publish the container elsewhere: DASHBOARD_PORT=8080 docker compose up -d",
+        "If another local process is using that port, stop it and retry.",
         f"Or use another dev port: make run DEV_PORT={port + 1}",
         "Or run the dev server on a custom port: "
         f"uv run uvicorn app.main:app --reload --port {port + 1} --host {host}",

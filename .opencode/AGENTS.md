@@ -5,11 +5,12 @@ encode the workflow that built the project so it can be repeated.
 
 ```text
 .opencode/
-  commands/          slash commands (.md) -> /add-source, /research-source
+  commands/          slash commands (.md) -> /add-source, /research-source, /verify-ui
   skills/            SKILL.md bundles the model can load on demand
     source-onboarding/   end-to-end "add a source" workflow
     scraper-authoring/   parser-level checklist and field mapping
     dashboard-qa/        review checklist
+    ui-verification/     agent-driven browser verification against :8001
   agents/            subagents (.md) with their own permissions
     source-researcher/   research + brief (no code)
     scraper-builder/     scraper + fixtures + tests
@@ -23,13 +24,17 @@ encode the workflow that built the project so it can be repeated.
 /add-source <source>
   └─ source-onboarding skill (phases, gates, handoffs)
        ├─ source-researcher   -> docs/research/<source>.md
-       ├─ (brief)             -> docs/sources.md + docs/tasks/<NN>-source-<source>.md
+       ├─ (brief)             -> docs/research/<source>.md + docs/sources.md
        ├─ scraper-builder     -> app/scrapers/<source>.py + fixtures + tests
        ├─ source-integrator   -> config flag, registry, docs, green suite, live smoke
        └─ qa-reviewer         -> findings on the finished diff
 ```
 
 `/research-source <source>` runs only the first phase.
+
+`/verify-ui` runs the `ui-verification` skill against the host dev server
+(`127.0.0.1:8001`). It is a separate check from `uv run pytest` and never
+touches the offline suite.
 
 ## Rules for editing these files
 

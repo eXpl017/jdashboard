@@ -398,9 +398,6 @@ class RefreshService:
 
         tags = sorted(set(scraped.security_tags) | set(classification.tags))
 
-        def _as_utc(value: datetime | None) -> datetime | None:
-            return to_utc(value) if value is not None else None
-
         now = utcnow()
         return Job(
             fingerprint=fingerprint(source_id, scraped.url),
@@ -418,10 +415,14 @@ class RefreshService:
             salary_text=scraped.salary_text,
             description_text=description_text,
             description_html=scraped.description_html,
-            posted_at=_as_utc(scraped.posted_at),
+            posted_at=to_utc(scraped.posted_at) if scraped.posted_at is not None else None,
             posted_at_raw=scraped.posted_at_raw,
-            source_updated_at=_as_utc(scraped.source_updated_at),
-            expires_at=_as_utc(scraped.expires_at),
+            source_updated_at=(
+                to_utc(scraped.source_updated_at)
+                if scraped.source_updated_at is not None
+                else None
+            ),
+            expires_at=to_utc(scraped.expires_at) if scraped.expires_at is not None else None,
             is_active=scraped.expires_at is None or scraped.expires_at > now,
             first_seen_at=now,
             last_seen_at=now,

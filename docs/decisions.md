@@ -4,7 +4,7 @@ Each record captures a decision, why it was made, and what it costs.
 
 ## ADR-001 — FastAPI + Jinja2 + vanilla JS
 
-**Status:** accepted for planning.
+**Status:** accepted.
 
 **Context:** The dashboard needs a Python backend, a small UI, and no build
 pipeline. The UI requirements are minimal: a list, filters, a refresh button,
@@ -23,7 +23,7 @@ plain CSS and vanilla JavaScript. No React, Vue, or Node toolchain.
 
 ## ADR-002 — SQLite + SQLAlchemy 2.0
 
-**Status:** accepted for planning.
+**Status:** accepted.
 
 **Context:** Single-user, local, small data volume, no concurrent writers.
 
@@ -82,7 +82,7 @@ requires fuzzy matching and can hide legitimate differences (salary, location,
 agency).
 
 **Decision:** Store one row per source listing. Show a source badge. Defer
-cross-source grouping to phase 6.
+cross-source grouping to a later phase (see `docs/agents/08-open-options.md`).
 
 **Consequences:**
 
@@ -92,7 +92,7 @@ cross-source grouping to phase 6.
 
 ## ADR-006 — Date window uses the source's posting date
 
-**Status:** accepted for planning; confirm with user.
+**Status:** accepted.
 
 **Context:** "Past 3 days" can mean the source's original posting date, the date
 the dashboard first saw it, or the date the source last updated it.
